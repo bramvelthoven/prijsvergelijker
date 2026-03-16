@@ -84,6 +84,12 @@ async function runAll() {
   console.log('='.repeat(60));
 
   close();
+
+  // Safety: fail CI if no products were scraped (prevents pushing empty data)
+  if (totals.scraped === 0) {
+    console.error('\nFATAAL: Geen enkel product gescraped. Afgebroken om lege data te voorkomen.');
+    process.exit(1);
+  }
 }
 
 runAll().catch((error) => {

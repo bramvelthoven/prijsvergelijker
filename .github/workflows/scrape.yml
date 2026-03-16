@@ -27,6 +27,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Restore database cache
+        uses: actions/cache@v4
+        id: db-cache
+        with:
+          path: prices.db
+          key: prices-db-${{ github.run_number }}
+          restore-keys: |
+            prices-db-
+
+      - name: Download seed database (first run only)
+        if: steps.db-cache.outputs.cache-hit != 'true'
+        run: |
+          if gh release view seed-db --json assets -q '.assets[].name' 2>/dev/null | grep -q prices.db; then
+            echo "Downloading seed database from release..."
+            gh release download seed-db -p prices.db --clobber
+            echo "Seed database restored ($(du -h prices.db | cut -f1))"
+          else
+            echo "No seed database found — starting fresh"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
 
@@ -34,6 +56,29 @@ jobs:
         run: node scrape.js
         env:
           CI: true
+        continue-on-error: true
+        id: scrape
+
+      - name: Report scraper status
+        run: |
+          if [ "${{ steps.scrape.outcome }}" = "failure" ]; then
+            echo "::warning::Scraper had errors — using cached data for site generation"
+          fi
+          if [ -f prices.db ]; then
+            node -e "
+              const db = require('better-sqlite3')('prices.db');
+              const products = db.prepare('SELECT COUNT(*) as c FROM products').get().c;
+              const prices = db.prepare('SELECT COUNT(*) as c FROM price_history').get().c;
+              console.log('Database: ' + products + ' products, ' + prices + ' price records');
+              if (products === 0) {
+                console.log('::error::Database has 0 products — cannot generate site');
+                process.exit(1);
+              }
+            "
+          else
+            echo "::error::No database file — nothing to generate"
+            exit 1
+          fi
 
       - name: Generate static site
         run: node generate-site.js
