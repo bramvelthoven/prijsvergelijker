@@ -53,8 +53,14 @@ function initTables() {
 function upsertProduct({ name, brand, category, unit, supermarket, url }) {
   const db = getDb();
 
-  const existing = db
-    .prepare('SELECT id, unit FROM products WHERE name = ? AND supermarket = ?')
+  // Match by URL first (most precise), fall back to name+supermarket+unit, then name+supermarket
+  const existing = (url && db
+    .prepare('SELECT id, unit FROM products WHERE url = ?')
+    .get(url)) ||
+    (unit && db
+    .prepare('SELECT id, unit FROM products WHERE name = ? AND supermarket = ? AND unit = ?')
+    .get(name, supermarket, unit)) ||
+    db.prepare('SELECT id, unit FROM products WHERE name = ? AND supermarket = ? AND url IS NULL')
     .get(name, supermarket);
 
   if (existing) {
