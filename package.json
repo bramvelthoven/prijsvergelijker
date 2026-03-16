@@ -1,0 +1,25 @@
+{
+  "name": "scraper",
+  "version": "1.0.0",
+  "description": "Supermarkt prijsscraper — track Dutch grocery prices over time",
+  "main": "scrape.js",
+  "scripts": {
+    "dev": "node web/server.js",
+    "build": "node generate-site.js",
+    "deploy": "node generate-site.js && cd web/public && npx vercel --prod",
+    "scrape": "node scrape.js",
+    "scrape:full": "node scrape.js && node generate-site.js",
+    "analyze": "node analyze.js",
+    "schedule": "node schedule.js",
+    "export": "node export.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "json2csv": "^6.0.0-alpha.2",
+    "node-cron": "^4.2.1",
+    "playwright": "^1.58.2"
+  }
+}

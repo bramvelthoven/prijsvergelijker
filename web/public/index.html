@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supermarkt Prijsvergelijker — NL</title>
+  <meta name="description" content="Vergelijk dagelijkse prijzen van Albert Heijn, Jumbo en Dirk. Ontdek graaiflatie, nep-aanbiedingen en de goedkoopste boodschappen.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    :root {
+      --bg: #0f1117; --bg2: #161b22; --border: #30363d; --border2: #21262d;
+      --text: #e1e4e8; --text2: #8b949e; --text3: #484f58;
+      --blue: #58a6ff; --green: #3fb950; --red: #f85149; --yellow: #e3b341;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+
+    .header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .header .logo { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .header .logo span { font-size: 26px; }
+    .header .subtitle { font-size: 13px; color: var(--text2); }
+    .header .meta { margin-left: auto; font-size: 11px; color: var(--text3); }
+
+    .nav { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 0; overflow-x: auto; }
+    .nav button { background: none; border: none; color: var(--text2); padding: 12px 16px; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+    .nav button:hover { color: var(--text); }
+    .nav button.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    @media (max-width: 640px) { .container { padding: 16px; } .nav { padding: 0 12px; } .header { padding: 12px 16px; } }
+
+    .search-box { display: flex; gap: 8px; margin-bottom: 20px; }
+    .search-box input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 15px; }
+    .search-box input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(88,166,255,0.15); }
+    .search-box input::placeholder { color: var(--text3); }
+    .search-box button { background: #238636; border: none; border-radius: 8px; color: white; padding: 12px 24px; font-size: 14px; font-weight: 500; cursor: pointer; }
+    .search-box button:hover { background: #2ea043; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border2); font-size: 13px; }
+    th { color: var(--text2); font-weight: 500; background: var(--bg2); position: sticky; top: 0; z-index: 1; }
+    tr:hover td { background: rgba(22,27,34,0.5); }
+    @media (max-width: 640px) { th, td { padding: 8px 6px; font-size: 12px; } }
+
+    .store { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .store-ah { background: #1f3a5f; color: var(--blue); }
+    .store-jumbo { background: #3d3a1f; color: var(--yellow); }
+    .store-dirk { background: #1f3d2a; color: var(--green); }
+
+    .price { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .price-sale { color: var(--red); font-size: 11px; font-weight: 600; margin-left: 4px; }
+    .cheapest { color: var(--green); font-weight: 600; }
+    .expensive { color: var(--red); font-weight: 500; }
+    .ppu { color: var(--text2); font-size: 11px; }
+    .pct { font-weight: 600; }
+    .pct-up { color: var(--red); }
+    .pct-down { color: var(--green); }
+
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 20px; }
+
+    .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+    .stat-card .label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+    .stat-card .value { font-size: 24px; font-weight: 700; }
+    .stat-card .detail { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+    .compare-group { margin-bottom: 20px; }
+    .compare-group h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .chart-container { position: relative; height: 280px; margin: 16px 0; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text2); }
+    .empty-state h3 { font-size: 16px; margin-bottom: 8px; }
+    .empty-state p { font-size: 14px; color: var(--text3); }
+    .loading { text-align: center; padding: 40px; color: var(--text2); }
+
+    .link { cursor: pointer; color: var(--blue); text-decoration: none; }
+    .link:hover { text-decoration: underline; }
+
+    #product-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
+    #product-modal.open { display: flex; }
+    .modal-content { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; max-width: 720px; width: 100%; max-height: 85vh; overflow-y: auto; position: relative; }
+    .modal-content h2 { font-size: 18px; padding-right: 30px; }
+    .close-btn { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--text2); font-size: 22px; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .close-btn:hover { background: var(--border); color: var(--text); }
+
+    .hero { text-align: center; padding: 40px 20px 20px; }
+    .hero h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    .hero p { font-size: 14px; color: var(--text2); max-width: 480px; margin: 0 auto 20px; }
+
+    .cat-pill { display: inline-block; padding: 6px 14px; margin: 4px; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; font-size: 13px; color: var(--text2); cursor: pointer; }
+    .cat-pill:hover { border-color: var(--blue); color: var(--blue); }
+    .cat-pill .cnt { font-size: 11px; color: var(--text3); margin-left: 4px; }
+
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text2); margin: 24px 0 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .footer { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 12px; border-top: 1px solid var(--border2); margin-top: 40px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo"><span>🛒</span> Prijsvergelijker</div>
+  <div class="subtitle">AH &middot; Jumbo &middot; Dirk</div>
+  <div class="meta" id="header-meta"></div>
+</div>
+
+<div class="nav">
+  <button class="active" data-tab="home">Overzicht</button>
+  <button data-tab="search">Zoeken</button>
+  <button data-tab="inflation">Inflatie</button>
+  <button data-tab="graaiflatie">Graaiflatie</button>
+  <button data-tab="categories">Categorieen</button>
+</div>
+
+<div class="container">
+  <div id="tab-home" class="tab-content active">
+    <div class="hero">
+      <h2>Vergelijk supermarktprijzen in Nederland</h2>
+      <p>Dagelijks scrapen we de prijzen van 36.000+ producten bij Albert Heijn, Jumbo en Dirk. Zoek een product en ontdek waar het goedkoopst is.</p>
+      <div class="search-box" style="max-width:500px;margin:0 auto">
+        <input type="text" id="home-search" placeholder="Bijv. komkommer, coca cola, kaas..." autofocus />
+        <button onclick="homeSearch()">Zoeken</button>
+      </div>
+    </div>
+    <div class="card-grid" id="home-stats"></div>
+    <div id="home-quick"></div>
+  </div>
+
+  <div id="tab-search" class="tab-content">
+    <div class="search-box">
+      <input type="text" id="search-input" placeholder="Zoek product..." />
+      <button onclick="doSearch()">Zoeken</button>
+    </div>
+    <div id="compare-results"></div>
+    <div id="search-results"></div>
+  </div>
+
+  <div id="tab-inflation" class="tab-content">
+    <div id="inflation-content"></div>
+  </div>
+
+  <div id="tab-graaiflatie" class="tab-content">
+    <div id="graaiflatie-content"></div>
+  </div>
+
+  <div id="tab-categories" class="tab-content">
+    <div id="categories-content"></div>
+  </div>
+</div>
+
+<div class="footer">
+  Data wordt dagelijks verzameld van ah.nl, jumbo.com en dirk.nl. Prijzen zijn indicatief.<br>
+  <span id="footer-updated"></span>
+</div>
+
+<div id="product-modal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeModal()">&times;</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const D = 'data/'; // data directory
+const SN = { ah: 'Albert Heijn', jumbo: 'Jumbo', dirk: 'Dirk' };
+let allProducts = null; // loaded on first search
+let historyData = null; // loaded on demand
+
+// ── Helpers ──
+const esc = s => { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+const badge = s => `<span class="store store-${s}">${SN[s]||s}</span>`;
+const fmtP = p => p != null ? `\u20AC${p.toFixed(2)}` : '\u2014';
+const fmtPPU = (p,t) => { if (!p) return ''; const u = t==='g'?'/kg':t==='ml'?'/l':'/stuk'; return `<span class="ppu">${fmtP(p)}${u}</span>`; };
+const pctB = v => { if (!v) return ''; return `<span class="pct ${v>0?'pct-up':'pct-down'}">${v>0?'+':''}${v}%</span>`; };
+const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+
+// ── Cache ──
+const cache = {};
+async function loadJson(file) {
+  if (cache[file]) return cache[file];
+  const r = await fetch(D + file);
+  if (!r.ok) return null;
+  const d = await r.json();
+  cache[file] = d;
+  return d;
+}
+
+// ── Nav ──
+document.querySelectorAll('.nav button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+function switchTab(tab) {
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  const btn = document.querySelector(`.nav button[data-tab="${tab}"]`);
+  if (btn) btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  if (tab==='inflation') loadInflation();
+  if (tab==='graaiflatie') loadGraaiflatie();
+  if (tab==='categories') loadCategories();
+  if (tab==='search') document.getElementById('search-input').focus();
+}
+
+// ── Home ──
+loadJson('stats.json').then(stats => {
+  if (!stats) return;
+  const total = stats.perStore.reduce((s,p) => s+p.products, 0);
+  document.getElementById('home-stats').innerHTML = `
+    <div class="stat-card"><div class="label">Producten</div><div class="value">${total.toLocaleString('nl-NL')}</div>
+      <div class="detail">${stats.perStore.map(s=>`${SN[s.supermarket]}: ${s.products.toLocaleString('nl-NL')}`).join(' &middot; ')}</div></div>
+    <div class="stat-card"><div class="label">Prijsmetingen</div><div class="value">${stats.totalPrices.toLocaleString('nl-NL')}</div>
+      <div class="detail">${stats.dateRange.days} dag${stats.dateRange.days!==1?'en':''} data (${stats.dateRange.first_date} t/m ${stats.dateRange.last_date})</div></div>
+    <div class="stat-card"><div class="label">Categorieen</div><div class="value">${stats.categories}</div>
+      <div class="detail">${stats.perStore.reduce((s,p)=>s+p.with_units,0).toLocaleString('nl-NL')} producten met eenheid</div></div>`;
+});
+
+loadJson('meta.json').then(meta => {
+  if (!meta) return;
+  const d = new Date(meta.generated_at);
+  document.getElementById('header-meta').textContent = `Bijgewerkt: ${d.toLocaleDateString('nl-NL')} ${d.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}`;
+  document.getElementById('footer-updated').textContent = `Laatst bijgewerkt: ${d.toLocaleDateString('nl-NL',{weekday:'long',year:'numeric',month:'long',day:'numeric'})} om ${d.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}`;
+});
+
+document.getElementById('home-quick').innerHTML = `
+  <div class="section-title">Probeer het uit</div>
+  <div>${['komkommer','coca cola','melk','brood','kaas','pasta','koffie','bier','chips','yoghurt'].map(q=>`<span class="cat-pill" onclick="quickSearch('${q}')">${q}</span>`).join('')}</div>`;
+
+function homeSearch() { const q=document.getElementById('home-search').value.trim(); if(!q)return; document.getElementById('search-input').value=q; switchTab('search'); doSearch(); }
+function quickSearch(q) { document.getElementById('search-input').value=q; switchTab('search'); doSearch(); }
+document.getElementById('home-search').addEventListener('keydown', e => { if(e.key==='Enter') homeSearch(); });
+
+// ── Search (client-side on loaded product data) ──
+document.getElementById('search-input').addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
+
+async function ensureProducts() {
+  if (allProducts) return;
+  document.getElementById('search-results').innerHTML = '<div class="loading">Producten laden...</div>';
+  const [ah, jumbo, dirk] = await Promise.all([
+    loadJson('products-ah.json'),
+    loadJson('products-jumbo.json'),
+    loadJson('products-dirk.json'),
+  ]);
+  // Expand compact keys
+  allProducts = [...(ah||[]), ...(jumbo||[]), ...(dirk||[])].map(p => ({
+    id:p.i, name:p.n, supermarket:p.s, category:p.c, unit:p.u,
+    unit_type:p.ut, unit_quantity:p.uq, price_per_unit:p.pp,
+    normalized_name:p.nn, price:p.p, original_price:p.op, is_sale:p.sa,
+  }));
+}
+
+async function doSearch() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  if (!q) return;
+  await ensureProducts();
+
+  const terms = q.split(/\s+/);
+  const results = allProducts.filter(p => {
+    const name = (p.normalized_name || p.name || '').toLowerCase();
+    return terms.every(t => name.includes(t));
+  });
+
+  // Group by normalized_name for comparison
+  const groups = new Map();
+  for (const p of results) {
+    const key = p.normalized_name || p.name.toLowerCase();
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(p);
+  }
+
+  // Multi-store groups
+  const multiStore = [];
+  for (const [name, items] of groups) {
+    const stores = new Set(items.map(i => i.supermarket));
+    if (stores.size > 1) multiStore.push({ name, items });
+  }
+
+  renderCompare(multiStore);
+  renderSearch(results.slice(0, 50));
+}
+
+function renderCompare(groups) {
+  const el = document.getElementById('compare-results');
+  if (groups.length === 0) { el.innerHTML = ''; return; }
+
+  let html = '<div class="section-title">Prijsvergelijking</div>';
+  for (const group of groups.slice(0, 20)) {
+    const sorted = group.items.filter(i => i.price != null).sort((a,b) => a.price - b.price);
+    if (sorted.length < 2) continue;
+    const cheapest = sorted[0].price;
+    html += `<div class="card compare-group"><h3>${esc(group.name)}</h3><table><tr><th>Winkel</th><th>Prijs</th><th>Per eenheid</th><th></th></tr>`;
+    for (let i = 0; i < sorted.length; i++) {
+      const p = sorted[i];
+      const diff = i===0 ? '<span class="cheapest">Goedkoopst</span>' : `<span class="expensive">+${Math.round((p.price-cheapest)/cheapest*100)}%</span>`;
+      const sale = p.is_sale ? '<span class="price-sale">ACTIE</span>' : '';
+      html += `<tr><td>${badge(p.supermarket)}</td><td><span class="price">${fmtP(p.price)}</span> ${sale}</td><td>${fmtPPU(p.price_per_unit,p.unit_type)}</td><td>${diff}</td></tr>`;
+    }
+    html += '</table></div>';
+  }
+  el.innerHTML = html;
+}
+
+function renderSearch(data) {
+  const el = document.getElementById('search-results');
+  if (!data || data.length === 0) { el.innerHTML = '<div class="empty-state"><h3>Geen resultaten</h3><p>Probeer een andere zoekterm.</p></div>'; return; }
+  let html = `<div class="section-title">${data.length} producten gevonden</div><div class="card"><table><tr><th>Winkel</th><th>Product</th><th>Prijs</th><th>Per eenheid</th></tr>`;
+  for (const p of data) {
+    const sale = p.is_sale ? '<span class="price-sale">ACTIE</span>' : '';
+    html += `<tr><td>${badge(p.supermarket)}</td><td><span class="link" onclick="showProduct(${p.id})">${esc(p.name)}</span> ${sale}<br><span class="ppu">${esc(p.unit||'')}</span></td><td><span class="price">${fmtP(p.price)}</span></td><td>${fmtPPU(p.price_per_unit,p.unit_type)}</td></tr>`;
+  }
+  html += '</table></div>';
+  el.innerHTML = html;
+}
+
+// ── Product Modal ──
+let priceChart = null;
+
+async function showProduct(id) {
+  const modal = document.getElementById('product-modal');
+  const body = document.getElementById('modal-body');
+  body.innerHTML = '<div class="loading">Laden...</div>';
+  modal.classList.add('open');
+
+  await ensureProducts();
+  const p = allProducts.find(x => x.id === id);
+  if (!p) { body.innerHTML = '<p>Product niet gevonden.</p>'; return; }
+
+  // Load history
+  if (!historyData) historyData = await loadJson('history.json') || {};
+  const history = historyData[id] || [];
+
+  let html = `<h2>${esc(p.name)}</h2>
+    <p style="margin:8px 0;color:var(--text2)">${badge(p.supermarket)} &middot; ${esc(p.category||'')} &middot; ${esc(p.unit||'')}</p>`;
+
+  if (history.length > 1) {
+    html += '<div class="chart-container"><canvas id="price-chart"></canvas></div>';
+  } else {
+    html += `<p style="margin:16px 0;font-size:14px">Prijs: <span class="price">${fmtP(p.price)}</span></p>`;
+  }
+
+  if (history.length > 0) {
+    html += '<table><tr><th>Datum</th><th>Prijs</th><th>Was-prijs</th><th>Actie</th></tr>';
+    for (const h of [...history].reverse()) {
+      html += `<tr><td>${h.date}</td><td class="price">${fmtP(h.price)}</td><td style="color:var(--text2)">${h.original_price!==h.price?fmtP(h.original_price):''}</td><td>${h.is_sale?'<span class="price-sale">Ja</span>':''}</td></tr>`;
+    }
+    html += '</table>';
+  }
+
+  body.innerHTML = html;
+
+  if (history.length > 1) {
+    const ctx = document.getElementById('price-chart').getContext('2d');
+    if (priceChart) priceChart.destroy();
+    priceChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: history.map(h=>h.date), datasets: [{ label:'Prijs', data:history.map(h=>h.price), borderColor:'#58a6ff', backgroundColor:'rgba(88,166,255,0.1)', fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:'#58a6ff' }] },
+      options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+        scales:{ x:{ticks:{color:'#8b949e',maxRotation:45},grid:{color:'#21262d'}}, y:{ticks:{color:'#8b949e',callback:v=>'\u20AC'+v.toFixed(2)},grid:{color:'#21262d'}} },
+        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>'\u20AC'+c.parsed.y.toFixed(2)}} } }
+    });
+  }
+}
+
+function closeModal() { document.getElementById('product-modal').classList.remove('open'); if(priceChart){priceChart.destroy();priceChart=null;} }
+document.getElementById('product-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+// ── Inflation ──
+async function loadInflation() {
+  const el = document.getElementById('inflation-content');
+  if (el.dataset.loaded) return;
+  el.innerHTML = '<div class="loading">Laden...</div>';
+  const data = await loadJson('inflation.json');
+  el.dataset.loaded = '1';
+  if (!data || (data.bySupermarket.length===0 && data.byCategory.length===0)) {
+    el.innerHTML = '<div class="empty-state"><h3>Nog niet genoeg data</h3><p>Inflatie wordt zichtbaar na meerdere dagen scrapen.</p></div>'; return;
+  }
+  let html = '';
+  if (data.bySupermarket.length) {
+    html += '<div class="section-title">Per supermarkt (afgelopen 30 dagen)</div><div class="card-grid">';
+    for (const s of data.bySupermarket) {
+      const c = s.avg_change_pct>0?'var(--red)':'var(--green)';
+      html += `<div class="stat-card"><div class="label">${badge(s.supermarket)}</div><div class="value" style="color:${c}">${s.avg_change_pct>0?'+':''}${s.avg_change_pct}%</div><div class="detail">${s.increased} gestegen &middot; ${s.decreased} gedaald &middot; ${s.products} producten</div></div>`;
+    }
+    html += '</div>';
+  }
+  if (data.byCategory.length) {
+    html += '<div class="section-title">Per categorie</div><div class="card"><table><tr><th>Categorie</th><th>Gem. verandering</th><th>Grootste stijging</th><th style="text-align:right">Gestegen</th><th style="text-align:right">Gedaald</th></tr>';
+    for (const c of data.byCategory) {
+      html += `<tr><td>${esc(c.category||'Onbekend')}</td><td>${pctB(c.avg_change_pct)}</td><td>${pctB(c.max_increase_pct)}</td><td style="text-align:right">${c.increased}</td><td style="text-align:right">${c.decreased}</td></tr>`;
+    }
+    html += '</table></div>';
+  }
+  el.innerHTML = html;
+}
+
+// ── Graaiflatie ──
+async function loadGraaiflatie() {
+  const el = document.getElementById('graaiflatie-content');
+  if (el.dataset.loaded) return;
+  el.innerHTML = '<div class="loading">Laden...</div>';
+  const data = await loadJson('graaiflatie.json');
+  el.dataset.loaded = '1';
+  if (!data || data.changes.length===0) { el.innerHTML = '<div class="empty-state"><h3>Nog niet genoeg data</h3><p>Prijsveranderingen worden zichtbaar na meerdere dagen scrapen.</p></div>'; return; }
+  const inc = data.changes.filter(c=>c.pct_change>0).slice(0,50);
+  const dec = data.changes.filter(c=>c.pct_change<0).sort((a,b)=>a.pct_change-b.pct_change).slice(0,50);
+  let html = '';
+  if (inc.length) {
+    html += '<div class="section-title" style="color:var(--red)">Grootste prijsstijgingen</div><div class="card"><table><tr><th>Product</th><th>Winkel</th><th>Was</th><th>Nu</th><th style="text-align:right">Verandering</th></tr>';
+    for (const p of inc) html += `<tr><td><span class="link" onclick="showProduct(${p.id})">${esc(p.name)}</span></td><td>${badge(p.supermarket)}</td><td style="color:var(--text2)">${fmtP(p.first_price)}</td><td class="price">${fmtP(p.latest_price)}</td><td style="text-align:right">${pctB(p.pct_change)}</td></tr>`;
+    html += '</table></div>';
+  }
+  if (dec.length) {
+    html += '<div class="section-title" style="color:var(--green)">Grootste prijsdalingen</div><div class="card"><table><tr><th>Product</th><th>Winkel</th><th>Was</th><th>Nu</th><th style="text-align:right">Verandering</th></tr>';
+    for (const p of dec) html += `<tr><td><span class="link" onclick="showProduct(${p.id})">${esc(p.name)}</span></td><td>${badge(p.supermarket)}</td><td style="color:var(--text2)">${fmtP(p.first_price)}</td><td class="price">${fmtP(p.latest_price)}</td><td style="text-align:right">${pctB(p.pct_change)}</td></tr>`;
+    html += '</table></div>';
+  }
+  el.innerHTML = html;
+}
+
+// ── Categories ──
+async function loadCategories() {
+  const el = document.getElementById('categories-content');
+  if (el.dataset.loaded) return;
+  el.innerHTML = '<div class="loading">Laden...</div>';
+  const data = await loadJson('categories.json');
+  el.dataset.loaded = '1';
+  if (!data) return;
+  let html = '<div class="section-title">Blader door categorieen</div><div style="margin-bottom:20px">';
+  for (const c of data) html += `<span class="cat-pill" onclick="browseCategory('${esc(c.canonical_category)}')">${esc(c.canonical_category)} <span class="cnt">${c.product_count}</span></span>`;
+  html += '</div><div id="category-products"></div>';
+  el.innerHTML = html;
+}
+
+async function browseCategory(name) {
+  const el = document.getElementById('category-products');
+  el.innerHTML = '<div class="loading">Laden...</div>';
+  const data = await loadJson(`categories/${slugify(name)}.json`);
+  if (!data||data.length===0) { el.innerHTML = '<div class="empty-state"><p>Geen producten.</p></div>'; return; }
+  data.sort((a,b)=>(a.latest_price||999)-(b.latest_price||999));
+  let html = `<div class="section-title">${esc(name)} (${data.length} producten)</div><div class="card"><table><tr><th>Winkel</th><th>Product</th><th>Prijs</th><th>Per eenheid</th></tr>`;
+  for (const p of data.slice(0,100)) {
+    const sale = p.is_sale ? '<span class="price-sale">ACTIE</span>' : '';
+    html += `<tr><td>${badge(p.supermarket)}</td><td><span class="link" onclick="showProduct(${p.id})">${esc(p.name)}</span> ${sale}</td><td><span class="price">${fmtP(p.latest_price)}</span></td><td>${fmtPPU(p.price_per_unit,p.unit_type)}</td></tr>`;
+  }
+  if (data.length>100) html += `<tr><td colspan="4" style="color:var(--text3);text-align:center">... en ${data.length-100} meer</td></tr>`;
+  html += '</table></div>';
+  el.innerHTML = html;
+  el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
+</body>
+</html>
