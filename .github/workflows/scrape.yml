@@ -45,4 +45,5 @@ jobs:
           git add web/public/data/
           git diff --cached --quiet && echo "No data changes" && exit 0
           git commit -m "data: $(date -u +%Y-%m-%d)"
+          git pull --rebase
           git push
