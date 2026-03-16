@@ -3,77 +3,150 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Supermarkt Prijsvergelijker — NL</title>
+  <title>Supermarkt Prijsvergelijker — Vergelijk AH, Jumbo & Dirk</title>
   <meta name="description" content="Vergelijk dagelijkse prijzen van Albert Heijn, Jumbo en Dirk. Ontdek graaiflatie, nep-aanbiedingen en de goedkoopste boodschappen.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <style>
     :root {
-      --bg: #0a0c10; --bg2: #13161d; --bg3: #1a1e28; --border: #262d3a; --border2: #1e2430;
-      --text: #e4e8f0; --text2: #8892a4; --text3: #505a6e;
-      --blue: #5ba0f5; --green: #44c76a; --red: #f06050; --yellow: #e8b84a; --purple: #a47cf5;
-      --ah-bg: rgba(0,100,200,0.12); --ah-text: #5ba0f5;
-      --jumbo-bg: rgba(230,180,40,0.12); --jumbo-text: #e8b84a;
-      --dirk-bg: rgba(60,190,100,0.12); --dirk-text: #44c76a;
+      --bg: #08090d; --bg2: #0f1117; --bg3: #161921; --bg4: #1c1f2a;
+      --border: #232836; --border2: #1a1e2a;
+      --text: #eaedf4; --text2: #8b94a9; --text3: #4f5768;
+      --accent: #4f8ff7; --accent2: #3b7be8; --accent-glow: rgba(79,143,247,0.15);
+      --green: #34d06a; --green-dim: rgba(52,208,106,0.12);
+      --red: #f25c54; --red-dim: rgba(242,92,84,0.12);
+      --yellow: #f0b429; --yellow-dim: rgba(240,180,41,0.12);
+      --purple: #a17cf5;
+      --ah: #0078d4; --ah-bg: rgba(0,120,212,0.10); --ah-text: #60a9f6;
+      --jumbo: #eab308; --jumbo-bg: rgba(234,179,8,0.10); --jumbo-text: #f0c040;
+      --dirk: #22c55e; --dirk-bg: rgba(34,197,94,0.10); --dirk-text: #4ade80;
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+    /* Utility */
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 
     /* Header */
-    .header { background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); border-bottom: 1px solid var(--border2); padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .header .logo { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; letter-spacing: -0.3px; }
-    .header .logo span { font-size: 24px; }
-    .header .stores { display: flex; gap: 6px; }
-    .header .store-dot { width: 8px; height: 8px; border-radius: 50%; }
-    .header .meta { margin-left: auto; font-size: 11px; color: var(--text3); }
+    .header { background: var(--bg2); border-bottom: 1px solid var(--border2); padding: 0 24px; height: 56px; display: flex; align-items: center; gap: 16px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+    .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .logo-text { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+    .logo-text span { color: var(--accent); }
+    .header-stores { display: flex; gap: 8px; margin-left: 16px; padding-left: 16px; border-left: 1px solid var(--border); }
+    .header-store { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+    .header-store-ah { color: var(--ah-text); background: var(--ah-bg); }
+    .header-store-jumbo { color: var(--jumbo-text); background: var(--jumbo-bg); }
+    .header-store-dirk { color: var(--dirk-text); background: var(--dirk-bg); }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .header-updated { font-size: 11px; color: var(--text3); }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s ease infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
     /* Nav */
-    .nav { background: var(--bg2); border-bottom: 1px solid var(--border2); padding: 0 24px; display: flex; gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .nav { background: var(--bg2); border-bottom: 1px solid var(--border2); padding: 0 24px; display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; }
     .nav::-webkit-scrollbar { display: none; }
-    .nav button { background: none; border: none; color: var(--text3); padding: 12px 18px; font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.2s, border-color 0.2s; position: relative; }
+    .nav button { background: none; border: none; color: var(--text3); padding: 12px 16px; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.2s, border-color 0.2s; }
     .nav button:hover { color: var(--text2); }
-    .nav button.active { color: var(--blue); border-bottom-color: var(--blue); }
-    .nav .badge { font-size: 10px; background: var(--blue); color: #fff; border-radius: 8px; padding: 1px 6px; margin-left: 6px; font-weight: 600; }
+    .nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .nav .badge { font-size: 10px; background: var(--accent); color: #fff; border-radius: 10px; padding: 1px 7px; margin-left: 6px; font-weight: 700; }
 
     /* Layout */
-    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-    @media (max-width: 640px) { .container { padding: 14px; } .nav { padding: 0 8px; } .header { padding: 12px 14px; } .nav button { padding: 10px 12px; font-size: 12px; } }
+    .container { max-width: 1120px; margin: 0 auto; padding: 24px; }
 
-    /* Search */
-    .search-box { display: flex; gap: 8px; margin-bottom: 20px; }
-    .search-box input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; color: var(--text); font-size: 15px; transition: border-color 0.2s, box-shadow 0.2s; }
-    .search-box input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(91,160,245,0.12); }
+    /* Hero */
+    .hero { text-align: center; padding: 56px 20px 36px; position: relative; }
+    .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 600px; height: 300px; background: radial-gradient(ellipse, rgba(79,143,247,0.06) 0%, transparent 70%); pointer-events: none; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 20px; background: var(--accent-glow); border: 1px solid rgba(79,143,247,0.2); font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 20px; }
+    .hero-badge .live-dot { width: 5px; height: 5px; }
+    .hero h2 { font-size: 32px; font-weight: 800; letter-spacing: -0.8px; line-height: 1.2; margin-bottom: 12px; }
+    .hero h2 .highlight { background: linear-gradient(135deg, var(--accent) 0%, #818cf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero p { font-size: 16px; color: var(--text2); max-width: 500px; margin: 0 auto 28px; line-height: 1.7; }
+
+    .hero-search { max-width: 560px; margin: 0 auto; position: relative; }
+    .hero-search input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 140px 16px 20px; color: var(--text); font-family: inherit; font-size: 15px; transition: border-color 0.2s, box-shadow 0.2s; }
+    .hero-search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-glow); }
+    .hero-search input::placeholder { color: var(--text3); }
+    .hero-search button { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); border: none; border-radius: var(--radius-sm); color: white; padding: 10px 24px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+    .hero-search button:hover { transform: translateY(-50%) translateY(-1px); box-shadow: 0 4px 16px rgba(79,143,247,0.3); }
+    .hero-search button:active { transform: translateY(-50%); }
+    .hero-search svg { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--text3); display: none; }
+
+    .quick-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; }
+    .cat-pill { display: inline-block; padding: 6px 14px; background: transparent; border: 1px solid var(--border); border-radius: 20px; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; transition: all 0.2s; }
+    .cat-pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 32px 0 40px; }
+    .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; position: relative; overflow: hidden; transition: border-color 0.2s, transform 0.2s; }
+    .stat-card:hover { border-color: var(--border); transform: translateY(-2px); }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+    .stat-card:nth-child(1)::before { background: linear-gradient(90deg, var(--accent), #818cf8); }
+    .stat-card:nth-child(2)::before { background: linear-gradient(90deg, var(--green), #34d0a0); }
+    .stat-card:nth-child(3)::before { background: linear-gradient(90deg, var(--yellow), #f0d429); }
+    .stat-card .stat-label { font-size: 12px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .stat-card .stat-value { font-size: 30px; font-weight: 800; letter-spacing: -1px; }
+    .stat-card .stat-detail { font-size: 12px; color: var(--text3); margin-top: 6px; line-height: 1.5; }
+
+    /* Section titles */
+    .section-title { font-size: 12px; font-weight: 600; color: var(--text3); margin: 32px 0 14px; text-transform: uppercase; letter-spacing: 0.8px; display: flex; align-items: center; gap: 8px; }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* Deal cards */
+    .deals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+    .deal-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 8px; }
+    .deal-card:hover { border-color: var(--green); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .deal-card .deal-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .deal-card .deal-name { font-size: 13px; font-weight: 500; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .deal-card .deal-badge { flex-shrink: 0; font-size: 10px; font-weight: 700; color: var(--green); background: var(--green-dim); padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+    .deal-card .deal-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
+    .deal-card .deal-price { font-size: 18px; font-weight: 700; color: var(--green); }
+    .deal-card .deal-was { font-size: 12px; color: var(--text3); text-decoration: line-through; margin-left: 6px; }
+
+    /* Card */
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; }
+    .card-padded { padding: 20px; }
+    .card h3 { font-size: 14px; font-weight: 600; padding: 16px 16px 0; }
+    .card table { margin: 0; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+
+    /* Search box */
+    .search-box { display: flex; gap: 8px; margin-bottom: 16px; }
+    .search-box input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; color: var(--text); font-family: inherit; font-size: 15px; transition: border-color 0.2s, box-shadow 0.2s; }
+    .search-box input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
     .search-box input::placeholder { color: var(--text3); }
-    .search-box button { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border: none; border-radius: 10px; color: white; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
-    .search-box button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
-    .search-box button:active { transform: translateY(0); }
+    .search-box button { background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); border: none; border-radius: var(--radius); color: white; padding: 12px 24px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+    .search-box button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79,143,247,0.3); }
 
-    /* Filter pills */
+    /* Filters */
     .filters { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
-    .filter-pill { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text2); transition: all 0.2s; }
+    .filter-pill { padding: 6px 14px; border-radius: 20px; font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text2); transition: all 0.2s; }
     .filter-pill:hover { border-color: var(--text2); color: var(--text); }
-    .filter-pill.active { border-color: var(--blue); background: rgba(91,160,245,0.1); color: var(--blue); }
+    .filter-pill.active { border-color: var(--accent); background: var(--accent-glow); color: var(--accent); }
     .filter-pill.active-ah { border-color: var(--ah-text); background: var(--ah-bg); color: var(--ah-text); }
     .filter-pill.active-jumbo { border-color: var(--jumbo-text); background: var(--jumbo-bg); color: var(--jumbo-text); }
     .filter-pill.active-dirk { border-color: var(--dirk-text); background: var(--dirk-bg); color: var(--dirk-text); }
 
     /* Tabs */
-    .tab-content { display: none; animation: fadeIn 0.25s ease; }
+    .tab-content { display: none; animation: fadeIn 0.3s ease; }
     .tab-content.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
     /* Tables */
     table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border2); font-size: 13px; }
-    th { color: var(--text3); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: var(--bg2); position: sticky; top: 0; z-index: 1; }
+    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border2); font-size: 13px; }
+    th { color: var(--text3); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: var(--bg3); position: sticky; top: 0; z-index: 1; }
     th.sortable { cursor: pointer; user-select: none; }
     th.sortable:hover { color: var(--text2); }
     th.sortable::after { content: ' \2195'; font-size: 10px; opacity: 0.4; }
-    th.sortable.asc::after { content: ' \2191'; opacity: 1; color: var(--blue); }
-    th.sortable.desc::after { content: ' \2193'; opacity: 1; color: var(--blue); }
+    th.sortable.asc::after { content: ' \2191'; opacity: 1; color: var(--accent); }
+    th.sortable.desc::after { content: ' \2193'; opacity: 1; color: var(--accent); }
     tr { transition: background 0.15s; }
-    tr:hover td { background: rgba(91,160,245,0.04); }
-    @media (max-width: 640px) { th, td { padding: 8px 6px; font-size: 12px; } th { font-size: 10px; } }
+    tr:hover td { background: rgba(79,143,247,0.03); }
 
     /* Store badges */
     .store { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
@@ -82,30 +155,16 @@
     .store-dirk { background: var(--dirk-bg); color: var(--dirk-text); }
 
     /* Prices */
-    .price { font-weight: 600; font-variant-numeric: tabular-nums; }
-    .price-sale { color: var(--green); font-size: 10px; font-weight: 700; padding: 2px 6px; background: rgba(68,199,106,0.12); border-radius: 4px; margin-left: 4px; letter-spacing: 0.3px; }
-    .cheapest { color: var(--green); font-weight: 600; font-size: 12px; }
-    .expensive { color: var(--red); font-weight: 500; font-size: 12px; }
+    .price { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .price-sale { color: var(--green); font-size: 10px; font-weight: 700; padding: 2px 7px; background: var(--green-dim); border-radius: 4px; margin-left: 4px; letter-spacing: 0.5px; }
+    .cheapest { color: var(--green); font-weight: 700; font-size: 11px; padding: 2px 8px; background: var(--green-dim); border-radius: 4px; }
+    .expensive { color: var(--red); font-weight: 600; font-size: 12px; }
     .ppu { color: var(--text3); font-size: 11px; }
-    .pct { font-weight: 600; }
+    .pct { font-weight: 700; }
     .pct-up { color: var(--red); }
     .pct-down { color: var(--green); }
 
-    /* Cards */
-    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 0; margin-bottom: 16px; overflow: hidden; }
-    .card-padded { padding: 20px; }
-    .card h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; padding: 16px 16px 0; }
-    .card table { margin: 0; }
-    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 24px; }
-
-    /* Stat cards */
-    .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; transition: border-color 0.2s, transform 0.2s; }
-    .stat-card:hover { border-color: var(--border); transform: translateY(-1px); }
-    .stat-card .label { font-size: 12px; color: var(--text3); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
-    .stat-card .value { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
-    .stat-card .detail { font-size: 12px; color: var(--text3); margin-top: 4px; }
-
-    /* Compare groups */
+    /* Compare */
     .compare-group { margin-bottom: 16px; }
     .compare-group h3 { font-size: 14px; font-weight: 600; margin-bottom: 0; }
     .chart-container { position: relative; height: 280px; margin: 16px 0; }
@@ -116,55 +175,82 @@
     .empty-state p { font-size: 14px; color: var(--text3); }
     .loading { text-align: center; padding: 40px; color: var(--text3); font-size: 13px; }
 
-    .link { cursor: pointer; color: var(--blue); text-decoration: none; transition: color 0.15s; }
-    .link:hover { color: #79b5f8; text-decoration: underline; }
+    /* Skeleton loading */
+    .skeleton { background: linear-gradient(90deg, var(--bg3) 25%, var(--bg4) 50%, var(--bg3) 75%); background-size: 200% 100%; animation: shimmer 1.5s ease infinite; border-radius: var(--radius-sm); }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skeleton-stat { height: 110px; border-radius: var(--radius); }
+    .skeleton-deal { height: 100px; border-radius: var(--radius); }
+
+    .link { cursor: pointer; color: var(--accent); text-decoration: none; transition: color 0.15s; }
+    .link:hover { color: #79b8ff; text-decoration: underline; }
 
     /* Modal */
-    #product-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
+    #product-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
     #product-modal.open { display: flex; }
-    .modal-content { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 28px; max-width: 720px; width: 100%; max-height: 85vh; overflow-y: auto; position: relative; animation: modalIn 0.2s ease; }
-    @keyframes modalIn { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-    .modal-content h2 { font-size: 18px; padding-right: 36px; letter-spacing: -0.2px; }
-    .close-btn { position: absolute; top: 16px; right: 16px; background: var(--bg3); border: 1px solid var(--border); color: var(--text2); font-size: 18px; cursor: pointer; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-    .close-btn:hover { background: var(--border); color: var(--text); }
-
-    /* Hero */
-    .hero { text-align: center; padding: 48px 20px 28px; }
-    .hero h2 { font-size: 24px; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.3px; background: linear-gradient(135deg, var(--text) 0%, var(--text2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .hero p { font-size: 15px; color: var(--text2); max-width: 520px; margin: 0 auto 24px; line-height: 1.6; }
-    @media (max-width: 640px) { .hero { padding: 32px 12px 20px; } .hero h2 { font-size: 20px; } .hero p { font-size: 14px; } }
-
-    /* Quick search pills */
-    .quick-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 16px; }
-    .cat-pill { display: inline-block; padding: 7px 16px; margin: 0; background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; font-size: 13px; color: var(--text2); cursor: pointer; transition: all 0.2s; }
-    .cat-pill:hover { border-color: var(--blue); color: var(--blue); background: rgba(91,160,245,0.08); }
-    .cat-pill .cnt { font-size: 11px; color: var(--text3); margin-left: 4px; }
-
-    .section-title { font-size: 13px; font-weight: 600; color: var(--text3); margin: 28px 0 12px; text-transform: uppercase; letter-spacing: 0.6px; }
-
-    /* Deals grid */
-    .deal-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: all 0.2s; }
-    .deal-card:hover { border-color: var(--green); transform: translateY(-1px); }
-    .deal-card .deal-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .deal-card .deal-price { font-size: 16px; font-weight: 700; color: var(--green); }
-    .deal-card .deal-store { margin-top: 6px; }
+    .modal-content { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0; max-width: 720px; width: 100%; max-height: 85vh; overflow-y: auto; position: relative; animation: modalIn 0.25s ease; }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.96) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .modal-header { padding: 24px 28px 16px; border-bottom: 1px solid var(--border); }
+    .modal-header h2 { font-size: 18px; font-weight: 700; padding-right: 36px; letter-spacing: -0.3px; }
+    .modal-header .modal-meta { margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .modal-body-inner { padding: 20px 28px 28px; }
+    .close-btn { position: absolute; top: 16px; right: 16px; background: var(--bg3); border: 1px solid var(--border); color: var(--text2); font-size: 18px; cursor: pointer; width: 32px; height: 32px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .close-btn:hover { background: var(--bg4); color: var(--text); }
 
     /* Footer */
-    .footer { text-align: center; padding: 32px 20px; color: var(--text3); font-size: 12px; border-top: 1px solid var(--border2); margin-top: 48px; line-height: 1.8; }
-    .footer a { color: var(--text3); text-decoration: none; }
-    .footer a:hover { color: var(--text2); }
+    .footer { border-top: 1px solid var(--border2); margin-top: 56px; padding: 40px 24px; }
+    .footer-inner { max-width: 1120px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; gap: 32px; flex-wrap: wrap; }
+    .footer-brand { }
+    .footer-brand .logo { margin-bottom: 12px; }
+    .footer-brand p { font-size: 13px; color: var(--text3); max-width: 320px; line-height: 1.6; }
+    .footer-links { display: flex; gap: 40px; }
+    .footer-links-col h4 { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .footer-links-col a { display: block; font-size: 13px; color: var(--text2); text-decoration: none; padding: 3px 0; transition: color 0.15s; }
+    .footer-links-col a:hover { color: var(--accent); }
+    .footer-bottom { max-width: 1120px; margin: 24px auto 0; padding-top: 20px; border-top: 1px solid var(--border2); font-size: 11px; color: var(--text3); text-align: center; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header { padding: 0 14px; }
+      .header-stores { display: none; }
+      .nav { padding: 0 8px; }
+      .nav button { padding: 10px 12px; font-size: 12px; }
+      .container { padding: 16px; }
+      .hero { padding: 36px 12px 24px; }
+      .hero h2 { font-size: 24px; }
+      .hero p { font-size: 14px; }
+      .hero-search input { padding: 14px 120px 14px 16px; font-size: 14px; }
+      .hero-search button { padding: 8px 16px; font-size: 13px; }
+      .stats-grid { grid-template-columns: 1fr; gap: 8px; }
+      .stat-card .stat-value { font-size: 24px; }
+      .deals-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      th, td { padding: 8px 8px; font-size: 12px; }
+      th { font-size: 10px; }
+      .footer-inner { flex-direction: column; gap: 24px; }
+      .footer-links { gap: 24px; }
+      .modal-header { padding: 20px; }
+      .modal-body-inner { padding: 16px 20px 24px; }
+    }
+    @media (max-width: 480px) {
+      .deals-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="logo"><span>🛒</span> Prijsvergelijker</div>
-  <div class="stores">
-    <div class="store-dot" style="background:var(--ah-text)"></div>
-    <div class="store-dot" style="background:var(--jumbo-text)"></div>
-    <div class="store-dot" style="background:var(--dirk-text)"></div>
+  <a class="logo" href="/">
+    <div class="logo-icon">🛒</div>
+    <div class="logo-text">Prijs<span>vergelijker</span></div>
+  </a>
+  <div class="header-stores">
+    <span class="header-store header-store-ah">AH</span>
+    <span class="header-store header-store-jumbo">Jumbo</span>
+    <span class="header-store header-store-dirk">Dirk</span>
   </div>
-  <div class="meta" id="header-meta"></div>
+  <div class="header-right">
+    <div class="live-dot" title="Dagelijks bijgewerkt"></div>
+    <div class="header-updated" id="header-meta"></div>
+  </div>
 </div>
 
 <div class="nav">
@@ -177,20 +263,29 @@
 </div>
 
 <div class="container">
+  <!-- HOME TAB -->
   <div id="tab-home" class="tab-content active">
     <div class="hero">
-      <h2>Vergelijk supermarktprijzen in Nederland</h2>
-      <p>Dagelijks verzamelen we prijzen van duizenden producten bij Albert Heijn, Jumbo en Dirk. Zoek, vergelijk en bespaar op je boodschappen.</p>
-      <div class="search-box" style="max-width:520px;margin:0 auto">
+      <div class="hero-badge"><div class="live-dot"></div> Dagelijks bijgewerkt</div>
+      <h2>Vergelijk prijzen bij <span class="highlight">AH, Jumbo & Dirk</span></h2>
+      <p>Dagelijks verzamelen we prijzen van duizenden producten. Zoek, vergelijk en bespaar op je boodschappen.</p>
+      <div class="hero-search">
         <input type="text" id="home-search" placeholder="Zoek een product, bijv. kaas, cola, brood..." autofocus />
         <button onclick="homeSearch()">Zoeken</button>
       </div>
       <div class="quick-pills" id="quick-pills"></div>
     </div>
-    <div class="card-grid" id="home-stats"></div>
+
+    <div class="stats-grid" id="home-stats">
+      <div class="skeleton skeleton-stat"></div>
+      <div class="skeleton skeleton-stat"></div>
+      <div class="skeleton skeleton-stat"></div>
+    </div>
+
     <div id="home-deals"></div>
   </div>
 
+  <!-- SEARCH TAB -->
   <div id="tab-search" class="tab-content">
     <div class="search-box">
       <input type="text" id="search-input" placeholder="Zoek product..." />
@@ -207,28 +302,55 @@
     <div id="search-results"></div>
   </div>
 
+  <!-- DEALS TAB -->
   <div id="tab-deals" class="tab-content">
     <div id="deals-content"></div>
   </div>
 
+  <!-- INFLATION TAB -->
   <div id="tab-inflation" class="tab-content">
     <div id="inflation-content"></div>
   </div>
 
+  <!-- GRAAIFLATIE TAB -->
   <div id="tab-graaiflatie" class="tab-content">
     <div id="graaiflatie-content"></div>
   </div>
 
+  <!-- CATEGORIES TAB -->
   <div id="tab-categories" class="tab-content">
     <div id="categories-content"></div>
   </div>
 </div>
 
-<div class="footer">
-  Prijzen worden dagelijks automatisch verzameld van ah.nl, jumbo.com en dirk.nl<br>
-  <span id="footer-updated"></span><br>
-  <a href="/over/">Over</a> &middot; <a href="/privacy/">Privacy</a> &middot; <a href="/categorieen/">Alle categorieen</a>
-</div>
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo">
+        <div class="logo-icon">🛒</div>
+        <div class="logo-text">Prijs<span>vergelijker</span></div>
+      </div>
+      <p>Dagelijks automatisch prijzen verzamelen van de grootste Nederlandse supermarkten. Onafhankelijk en transparant.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-links-col">
+        <h4>Pagina's</h4>
+        <a href="/over/">Over ons</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/categorieen/">Alle categorieen</a>
+      </div>
+      <div class="footer-links-col">
+        <h4>Supermarkten</h4>
+        <a href="https://www.ah.nl" target="_blank" rel="noopener">Albert Heijn</a>
+        <a href="https://www.jumbo.com" target="_blank" rel="noopener">Jumbo</a>
+        <a href="https://www.dirk.nl" target="_blank" rel="noopener">Dirk</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span id="footer-updated"></span> &middot; Prijzen worden dagelijks automatisch verzameld van ah.nl, jumbo.com en dirk.nl
+  </div>
+</footer>
 
 <div id="product-modal">
   <div class="modal-content">
@@ -279,44 +401,61 @@ function switchTab(tab) {
   if (tab==='search') document.getElementById('search-input').focus();
 }
 
-// Home
+// Home stats
 loadJson('stats.json').then(stats => {
   if (!stats) return;
   const total = stats.perStore.reduce((s,p) => s+p.products, 0);
   document.getElementById('home-stats').innerHTML = `
-    <div class="stat-card"><div class="label">Producten</div><div class="value">${total.toLocaleString('nl-NL')}</div>
-      <div class="detail">${stats.perStore.map(s=>`${SN[s.supermarket]}: ${s.products.toLocaleString('nl-NL')}`).join(' &middot; ')}</div></div>
-    <div class="stat-card"><div class="label">Prijsmetingen</div><div class="value">${stats.totalPrices.toLocaleString('nl-NL')}</div>
-      <div class="detail">${stats.dateRange.days} dag${stats.dateRange.days!==1?'en':''} data</div></div>
-    <div class="stat-card"><div class="label">Categorieen</div><div class="value">${stats.categories}</div>
-      <div class="detail">${stats.perStore.reduce((s,p)=>s+p.with_units,0).toLocaleString('nl-NL')} met eenheidsprijs</div></div>`;
+    <div class="stat-card">
+      <div class="stat-label">Producten</div>
+      <div class="stat-value">${total.toLocaleString('nl-NL')}</div>
+      <div class="stat-detail">${stats.perStore.map(s=>`${SN[s.supermarket]}: ${s.products.toLocaleString('nl-NL')}`).join(' &middot; ')}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Prijsmetingen</div>
+      <div class="stat-value">${stats.totalPrices.toLocaleString('nl-NL')}</div>
+      <div class="stat-detail">${stats.dateRange.days} dag${stats.dateRange.days!==1?'en':''} data verzameld</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Categorieen</div>
+      <div class="stat-value">${stats.categories}</div>
+      <div class="stat-detail">${stats.perStore.reduce((s,p)=>s+p.with_units,0).toLocaleString('nl-NL')} met eenheidsprijs</div>
+    </div>`;
 });
 
+// Meta
 loadJson('meta.json').then(meta => {
   if (!meta) return;
   const d = new Date(meta.generated_at);
-  document.getElementById('header-meta').textContent = `${d.toLocaleDateString('nl-NL')} ${d.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}`;
-  document.getElementById('footer-updated').textContent = `Laatst bijgewerkt: ${d.toLocaleDateString('nl-NL',{weekday:'long',year:'numeric',month:'long',day:'numeric'})} om ${d.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}`;
+  document.getElementById('header-meta').textContent = d.toLocaleDateString('nl-NL', {day:'numeric',month:'short'}) + ' ' + d.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('footer-updated').textContent = `Laatst bijgewerkt: ${d.toLocaleDateString('nl-NL',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}`;
 });
 
-// Quick search pills
+// Quick pills
 const quickTerms = ['komkommer','coca cola','melk','brood','kaas','pasta','koffie','bier','chips','yoghurt','pindakaas','eieren'];
 document.getElementById('quick-pills').innerHTML = quickTerms.map(q=>`<span class="cat-pill" onclick="quickSearch('${q}')">${q}</span>`).join('');
 
-// Home deals preview
+// Home deals
 loadJson('products-ah.json').then(async data => {
   if (!data) return;
   const [jumbo, dirk] = await Promise.all([loadJson('products-jumbo.json'), loadJson('products-dirk.json')]);
   const all = [...(data||[]), ...(jumbo||[]), ...(dirk||[])].filter(p => p.sa);
   const shuffled = all.sort(() => Math.random() - 0.5).slice(0, 8);
   if (shuffled.length === 0) return;
-  let html = '<div class="section-title">Aanbiedingen vandaag</div><div class="card-grid">';
+  let html = '<div class="section-title">Aanbiedingen vandaag</div><div class="deals-grid">';
   for (const p of shuffled) {
     const safeName = esc(p.n).replace(/"/g, '&quot;');
+    const wasPrice = (p.op && p.op > p.p) ? `<span class="deal-was">${fmtP(p.op)}</span>` : '';
+    const savePct = (p.op && p.op > p.p) ? `-${Math.round((1-p.p/p.op)*100)}%` : 'ACTIE';
     html += `<div class="deal-card" data-q="${safeName}" onclick="quickSearch(this.dataset.q)">
-      <div class="deal-name">${esc(p.n)}</div>
-      <div class="deal-price">${fmtP(p.p)} <span class="price-sale">ACTIE</span></div>
-      <div class="deal-store">${badge(p.s)}</div>
+      <div class="deal-header">
+        <div class="deal-name">${esc(p.n)}</div>
+        <div class="deal-badge">${savePct}</div>
+      </div>
+      <div class="deal-bottom">
+        <div><span class="deal-price">${fmtP(p.p)}</span>${wasPrice}</div>
+        ${badge(p.s)}
+      </div>
     </div>`;
   }
   html += '</div>';
@@ -368,7 +507,6 @@ async function doSearch() {
     return terms.every(t => name.includes(t));
   });
 
-  // Apply store filter
   if (storeFilter !== 'all' && storeFilter !== 'sale') {
     results = results.filter(p => p.supermarket === storeFilter);
   }
@@ -376,7 +514,6 @@ async function doSearch() {
     results = results.filter(p => p.is_sale);
   }
 
-  // Group by normalized_name for comparison
   const groups = new Map();
   for (const p of results) {
     const key = p.normalized_name || p.name.toLowerCase();
@@ -476,13 +613,15 @@ async function showProduct(id) {
   if (!historyData) historyData = await loadJson('history.json') || {};
   const history = historyData[id] || [];
 
-  let html = `<h2>${esc(p.name)}</h2>
-    <p style="margin:8px 0;color:var(--text2)">${badge(p.supermarket)} <span style="margin:0 6px;color:var(--text3)">&middot;</span> ${esc(p.category||'')} <span style="margin:0 6px;color:var(--text3)">&middot;</span> ${esc(p.unit||'')}</p>`;
+  let html = `<div class="modal-header">
+    <h2>${esc(p.name)}</h2>
+    <div class="modal-meta">${badge(p.supermarket)} <span style="color:var(--text3)">&middot;</span> <span class="ppu">${esc(p.category||'')}</span> <span style="color:var(--text3)">&middot;</span> <span class="ppu">${esc(p.unit||'')}</span></div>
+  </div><div class="modal-body-inner">`;
 
   if (history.length > 1) {
     html += '<div class="chart-container"><canvas id="price-chart"></canvas></div>';
   } else {
-    html += `<div style="margin:20px 0;padding:16px;background:var(--bg3);border-radius:8px"><span style="color:var(--text2)">Huidige prijs:</span> <span class="price" style="font-size:20px;margin-left:8px">${fmtP(p.price)}</span></div>`;
+    html += `<div style="margin:8px 0 20px;padding:20px;background:var(--bg3);border-radius:var(--radius);display:flex;align-items:center;gap:12px"><span style="color:var(--text2)">Huidige prijs:</span> <span class="price" style="font-size:22px">${fmtP(p.price)}</span>${p.is_sale?'<span class="price-sale">ACTIE</span>':''}</div>`;
   }
 
   if (history.length > 0) {
@@ -493,6 +632,7 @@ async function showProduct(id) {
     html += '</table>';
   }
 
+  html += '</div>';
   body.innerHTML = html;
 
   if (history.length > 1) {
@@ -500,10 +640,10 @@ async function showProduct(id) {
     if (priceChart) priceChart.destroy();
     priceChart = new Chart(ctx, {
       type: 'line',
-      data: { labels: history.map(h=>h.date), datasets: [{ label:'Prijs', data:history.map(h=>h.price), borderColor:'#5ba0f5', backgroundColor:'rgba(91,160,245,0.08)', fill:true, tension:0.3, pointRadius:4, pointBackgroundColor:'#5ba0f5', pointBorderWidth: 0 }] },
+      data: { labels: history.map(h=>h.date), datasets: [{ label:'Prijs', data:history.map(h=>h.price), borderColor:'var(--accent)', backgroundColor:'rgba(79,143,247,0.06)', fill:true, tension:0.3, pointRadius:4, pointBackgroundColor:'var(--accent)', pointBorderWidth: 0, borderWidth: 2 }] },
       options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-        scales:{ x:{ticks:{color:'#505a6e',maxRotation:45,font:{size:11}},grid:{color:'#1e2430'}}, y:{ticks:{color:'#505a6e',callback:v=>'\u20AC'+v.toFixed(2),font:{size:11}},grid:{color:'#1e2430'}} },
-        plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#1a1e28',borderColor:'#262d3a',borderWidth:1,titleColor:'#8892a4',bodyColor:'#e4e8f0',padding:10,callbacks:{label:c=>'\u20AC'+c.parsed.y.toFixed(2)}} } }
+        scales:{ x:{ticks:{color:'#4f5768',maxRotation:45,font:{size:11,family:'Inter'}},grid:{color:'#1a1e2a'}}, y:{ticks:{color:'#4f5768',callback:v=>'\u20AC'+v.toFixed(2),font:{size:11,family:'Inter'}},grid:{color:'#1a1e2a'}} },
+        plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#161921',borderColor:'#232836',borderWidth:1,titleColor:'#8b94a9',bodyColor:'#eaedf4',padding:12,cornerRadius:8,titleFont:{family:'Inter'},bodyFont:{family:'Inter'},callbacks:{label:c=>'\u20AC'+c.parsed.y.toFixed(2)}} } }
     });
   }
 }
@@ -512,7 +652,7 @@ function closeModal() { document.getElementById('product-modal').classList.remov
 document.getElementById('product-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
 document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
 
-// Deals / Aanbiedingen tab
+// Deals tab
 async function loadDeals() {
   const el = document.getElementById('deals-content');
   if (el.dataset.loaded) return;
@@ -554,10 +694,10 @@ async function loadInflation() {
   }
   let html = '';
   if (data.bySupermarket.length) {
-    html += '<div class="section-title">Per supermarkt (30 dagen)</div><div class="card-grid">';
+    html += '<div class="section-title">Per supermarkt (30 dagen)</div><div class="stats-grid" style="margin-top:0">';
     for (const s of data.bySupermarket) {
       const c = s.avg_change_pct>0?'var(--red)':'var(--green)';
-      html += `<div class="stat-card"><div class="label">${badge(s.supermarket)}</div><div class="value" style="color:${c}">${s.avg_change_pct>0?'+':''}${s.avg_change_pct}%</div><div class="detail">${s.increased} gestegen &middot; ${s.decreased} gedaald</div></div>`;
+      html += `<div class="stat-card"><div class="stat-label">${SN[s.supermarket]||s.supermarket}</div><div class="stat-value" style="color:${c}">${s.avg_change_pct>0?'+':''}${s.avg_change_pct}%</div><div class="stat-detail">${s.increased} gestegen &middot; ${s.decreased} gedaald</div></div>`;
     }
     html += '</div>';
   }
@@ -603,8 +743,8 @@ async function loadCategories() {
   const data = await loadJson('categories.json');
   el.dataset.loaded = '1';
   if (!data) return;
-  let html = '<div class="section-title">Blader door categorieen</div><div style="margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px">';
-  for (const c of data) html += `<span class="cat-pill" onclick="browseCategory('${esc(c.canonical_category)}')">${esc(c.canonical_category)} <span class="cnt">${c.product_count}</span></span>`;
+  let html = '<div class="section-title">Blader door categorieen</div><div style="margin-bottom:20px;display:flex;flex-wrap:wrap;gap:8px">';
+  for (const c of data) html += `<span class="cat-pill" onclick="browseCategory('${esc(c.canonical_category)}')">${esc(c.canonical_category)} <span style="font-size:11px;color:var(--text3);margin-left:4px">${c.product_count}</span></span>`;
   html += '</div><div id="category-products"></div>';
   el.innerHTML = html;
 }
