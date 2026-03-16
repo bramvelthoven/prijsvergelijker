@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { execFile } = require('child_process');
+const { execFile, exec } = require('child_process');
 const path = require('path');
 
 const SCRAPE_SCRIPT = path.join(__dirname, 'scrape.js');
@@ -27,9 +27,21 @@ cron.schedule('0 6 * * *', () => {
       if (serr2) console.error(serr2);
       if (err2) {
         console.error(`Site generatie fout: ${err2.message}`);
-      } else {
-        console.log('Statische site bijgewerkt');
+        return;
       }
+      console.log('Statische site bijgewerkt, pushen naar GitHub...');
+
+      const date = new Date().toISOString().slice(0, 10);
+      const cmd = `git add web/public/data && git commit -m "data: ${date}" && git push`;
+      exec(cmd, { cwd: __dirname }, (err3, out3, serr3) => {
+        if (out3) console.log(out3);
+        if (serr3) console.error(serr3);
+        if (err3) {
+          console.error(`Git push fout: ${err3.message}`);
+        } else {
+          console.log('Data gepusht naar GitHub — Vercel deploy wordt automatisch gestart');
+        }
+      });
     });
   });
 }, {
