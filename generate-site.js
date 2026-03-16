@@ -135,7 +135,29 @@ function generate() {
   }));
   writeJson('matches.json', matchData);
 
-  // 11. Build timestamp
+  // 11. Price index — daily average price per supermarket (for homepage chart)
+  const priceIndex = db.prepare(`
+    SELECT DATE(pr.scraped_at) as date, p.supermarket,
+           ROUND(AVG(pr.price), 4) as avg_price,
+           COUNT(*) as products
+    FROM prices pr
+    JOIN products p ON p.id = pr.product_id
+    GROUP BY DATE(pr.scraped_at), p.supermarket
+    ORDER BY date ASC, p.supermarket
+  `).all();
+
+  // Reshape into { dates: [...], series: { ah: [...], jumbo: [...], dirk: [...] } }
+  const dates = [...new Set(priceIndex.map(r => r.date))].sort();
+  const indexSeries = { ah: [], jumbo: [], dirk: [] };
+  for (const date of dates) {
+    for (const store of ['ah', 'jumbo', 'dirk']) {
+      const row = priceIndex.find(r => r.date === date && r.supermarket === store);
+      indexSeries[store].push(row ? row.avg_price : null);
+    }
+  }
+  writeJson('price-index.json', { dates, series: indexSeries });
+
+  // 12. Build timestamp
   writeJson('meta.json', {
     generated_at: new Date().toISOString(),
     product_count: searchIndex.length,
