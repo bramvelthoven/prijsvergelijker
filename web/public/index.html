@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Supermarkt Prijsvergelijker — Vergelijk AH, Jumbo & Dirk</title>
   <meta name="description" content="Vergelijk dagelijkse prijzen van Albert Heijn, Jumbo en Dirk. Ontdek graaiflatie, nep-aanbiedingen en de goedkoopste boodschappen.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='%234f8ff7'/><stop offset='100%' stop-color='%23818cf8'/></linearGradient></defs><rect width='32' height='32' rx='7' fill='%23080a0f'/><text x='16' y='23' text-anchor='middle' font-size='20'>🛒</text></svg>">
+  <link rel="canonical" href="https://prijsvergelijker-seven.vercel.app/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -180,6 +181,18 @@
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     .skeleton-stat { height: 110px; border-radius: var(--radius); }
     .skeleton-deal { height: 100px; border-radius: var(--radius); }
+    .skeleton-row { height: 48px; margin-bottom: 4px; border-radius: var(--radius-sm); }
+
+    /* Savings */
+    .savings-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 14px; transition: border-color 0.2s, transform 0.2s; cursor: pointer; }
+    .savings-card:hover { border-color: var(--green); transform: translateY(-2px); }
+    .savings-card .savings-pct { flex-shrink: 0; width: 48px; height: 48px; border-radius: 10px; background: var(--green-dim); color: var(--green); font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .savings-card .savings-info { flex: 1; min-width: 0; }
+    .savings-card .savings-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .savings-card .savings-detail { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .savings-card .savings-prices { text-align: right; flex-shrink: 0; }
+    .savings-card .savings-cheap { font-size: 15px; font-weight: 700; color: var(--green); }
+    .savings-card .savings-exp { font-size: 11px; color: var(--text3); text-decoration: line-through; }
 
     /* Price index chart */
     .index-chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 32px; }
@@ -277,7 +290,7 @@
 <div class="nav">
   <button class="active" data-tab="home">Overzicht</button>
   <button data-tab="search">Zoeken</button>
-  <button data-tab="deals">Aanbiedingen</button>
+  <button data-tab="deals">Aanbiedingen <span class="badge" id="deals-badge" style="display:none"></span></button>
   <button data-tab="inflation">Inflatie</button>
   <button data-tab="graaiflatie">Graaiflatie</button>
   <button data-tab="categories">Categorieen</button>
@@ -304,6 +317,8 @@
     </div>
 
     <div id="home-chart"></div>
+
+    <div id="home-savings"></div>
 
     <div id="home-deals"></div>
   </div>
@@ -424,26 +439,43 @@ function switchTab(tab) {
   if (tab==='search') document.getElementById('search-input').focus();
 }
 
+// Animated counter
+function animateCount(el, target, duration = 1200) {
+  const start = performance.now();
+  const fmt = n => n.toLocaleString('nl-NL');
+  const step = ts => {
+    const progress = Math.min((ts - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    el.textContent = fmt(Math.round(target * ease));
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 // Home stats
 loadJson('stats.json').then(stats => {
   if (!stats) return;
   const total = stats.perStore.reduce((s,p) => s+p.products, 0);
+  const withUnits = stats.perStore.reduce((s,p)=>s+p.with_units,0);
   document.getElementById('home-stats').innerHTML = `
     <div class="stat-card">
       <div class="stat-label">Producten</div>
-      <div class="stat-value">${total.toLocaleString('nl-NL')}</div>
+      <div class="stat-value" data-count="${total}">0</div>
       <div class="stat-detail">${stats.perStore.map(s=>`${SN[s.supermarket]}: ${s.products.toLocaleString('nl-NL')}`).join(' &middot; ')}</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Prijsmetingen</div>
-      <div class="stat-value">${stats.totalPrices.toLocaleString('nl-NL')}</div>
+      <div class="stat-value" data-count="${stats.totalPrices}">0</div>
       <div class="stat-detail">${stats.dateRange.days} dag${stats.dateRange.days!==1?'en':''} data verzameld</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Categorieen</div>
-      <div class="stat-value">${stats.categories}</div>
-      <div class="stat-detail">${stats.perStore.reduce((s,p)=>s+p.with_units,0).toLocaleString('nl-NL')} met eenheidsprijs</div>
+      <div class="stat-value" data-count="${stats.categories}">0</div>
+      <div class="stat-detail">${withUnits.toLocaleString('nl-NL')} met eenheidsprijs</div>
     </div>`;
+  document.querySelectorAll('.stat-value[data-count]').forEach(el => {
+    animateCount(el, parseInt(el.dataset.count));
+  });
 });
 
 // Meta
@@ -458,15 +490,69 @@ loadJson('meta.json').then(meta => {
 const quickTerms = ['komkommer','coca cola','melk','brood','kaas','pasta','koffie','bier','chips','yoghurt','pindakaas','eieren'];
 document.getElementById('quick-pills').innerHTML = quickTerms.map(q=>`<span class="cat-pill" onclick="quickSearch('${q}')">${q}</span>`).join('');
 
-// Home deals
+// Home deals + savings + deal badge
 loadJson('products-ah.json').then(async data => {
   if (!data) return;
   const [jumbo, dirk] = await Promise.all([loadJson('products-jumbo.json'), loadJson('products-dirk.json')]);
-  const all = [...(data||[]), ...(jumbo||[]), ...(dirk||[])].filter(p => p.sa);
-  const shuffled = all.sort(() => Math.random() - 0.5).slice(0, 8);
-  if (shuffled.length === 0) return;
+  const all = [...(data||[]), ...(jumbo||[]), ...(dirk||[])];
+
+  // Deal badge count
+  const dealCount = all.filter(p => p.sa).length;
+  if (dealCount > 0) {
+    const b = document.getElementById('deals-badge');
+    b.textContent = dealCount;
+    b.style.display = 'inline';
+  }
+
+  // Savings section — find biggest price gaps for matched products
+  const byNorm = new Map();
+  for (const p of all) {
+    if (!p.nn || p.p == null) continue;
+    if (!byNorm.has(p.nn)) byNorm.set(p.nn, []);
+    byNorm.get(p.nn).push(p);
+  }
+  const savings = [];
+  for (const [name, items] of byNorm) {
+    const stores = new Set(items.map(i => i.s));
+    if (stores.size < 2) continue;
+    const sorted = items.filter(i => i.p > 0).sort((a,b) => a.p - b.p);
+    if (sorted.length < 2) continue;
+    const cheap = sorted[0];
+    const exp = sorted[sorted.length - 1];
+    const diff = exp.p - cheap.p;
+    const pct = Math.round((diff / exp.p) * 100);
+    if (pct >= 5 && diff >= 0.10) {
+      savings.push({ name, cheap, exp, diff, pct });
+    }
+  }
+  savings.sort((a,b) => b.pct - a.pct);
+
+  if (savings.length > 0) {
+    const top = savings.slice(0, 6);
+    let shtml = '<div class="section-title">Meeste besparingen</div><div class="deals-grid">';
+    for (const s of top) {
+      const safeName = esc(s.name).replace(/"/g, '&quot;');
+      shtml += `<div class="savings-card" data-q="${safeName}" onclick="quickSearch(this.dataset.q)">
+        <div class="savings-pct">${s.pct}%</div>
+        <div class="savings-info">
+          <div class="savings-name">${esc(s.name)}</div>
+          <div class="savings-detail">Goedkoopst bij ${badge(s.cheap.s)}</div>
+        </div>
+        <div class="savings-prices">
+          <div class="savings-cheap">${fmtP(s.cheap.p)}</div>
+          <div class="savings-exp">${fmtP(s.exp.p)}</div>
+        </div>
+      </div>`;
+    }
+    shtml += '</div>';
+    document.getElementById('home-savings').innerHTML = shtml;
+  }
+
+  // Deal cards
+  const deals = all.filter(p => p.sa).sort(() => Math.random() - 0.5).slice(0, 8);
+  if (deals.length === 0) return;
   let html = '<div class="section-title">Aanbiedingen vandaag</div><div class="deals-grid">';
-  for (const p of shuffled) {
+  for (const p of deals) {
     const safeName = esc(p.n).replace(/"/g, '&quot;');
     const wasPrice = (p.op && p.op > p.p) ? `<span class="deal-was">${fmtP(p.op)}</span>` : '';
     const savePct = (p.op && p.op > p.p) ? `-${Math.round((1-p.p/p.op)*100)}%` : 'ACTIE';
@@ -570,6 +656,24 @@ function homeSearch() { const q=document.getElementById('home-search').value.tri
 function quickSearch(q) { document.getElementById('search-input').value=q; switchTab('search'); doSearch(); }
 document.getElementById('home-search').addEventListener('keydown', e => { if(e.key==='Enter') homeSearch(); });
 
+// Keyboard shortcut: / to focus search
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && !e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT') {
+    e.preventDefault();
+    switchTab('search');
+    document.getElementById('search-input').focus();
+  }
+});
+
+// Restore last search from localStorage
+try {
+  const lastQ = localStorage.getItem('lastSearch');
+  if (lastQ) {
+    document.getElementById('home-search').value = lastQ;
+    document.getElementById('search-input').value = lastQ;
+  }
+} catch(e) {}
+
 // Store filter
 function setStoreFilter(store) {
   storeFilter = store;
@@ -603,6 +707,7 @@ async function ensureProducts() {
 async function doSearch() {
   const q = document.getElementById('search-input').value.trim().toLowerCase();
   if (!q) return;
+  try { localStorage.setItem('lastSearch', q); } catch(e) {}
   await ensureProducts();
 
   const terms = q.split(/\s+/);
@@ -763,7 +868,7 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); }
 async function loadDeals() {
   const el = document.getElementById('deals-content');
   if (el.dataset.loaded) return;
-  el.innerHTML = '<div class="loading">Laden...</div>';
+  el.innerHTML = '<div style="padding:16px">' + Array(8).fill('<div class="skeleton skeleton-row"></div>').join('') + '</div>';
   await ensureProducts();
   el.dataset.loaded = '1';
 
@@ -793,7 +898,7 @@ async function loadDeals() {
 async function loadInflation() {
   const el = document.getElementById('inflation-content');
   if (el.dataset.loaded) return;
-  el.innerHTML = '<div class="loading">Laden...</div>';
+  el.innerHTML = '<div style="padding:16px"><div class="stats-grid" style="margin:0 0 16px">' + Array(3).fill('<div class="skeleton skeleton-stat"></div>').join('') + '</div>' + Array(6).fill('<div class="skeleton skeleton-row"></div>').join('') + '</div>';
   const data = await loadJson('inflation.json');
   el.dataset.loaded = '1';
   if (!data || (data.bySupermarket.length===0 && data.byCategory.length===0)) {
@@ -822,7 +927,7 @@ async function loadInflation() {
 async function loadGraaiflatie() {
   const el = document.getElementById('graaiflatie-content');
   if (el.dataset.loaded) return;
-  el.innerHTML = '<div class="loading">Laden...</div>';
+  el.innerHTML = '<div style="padding:16px">' + Array(10).fill('<div class="skeleton skeleton-row"></div>').join('') + '</div>';
   const data = await loadJson('graaiflatie.json');
   el.dataset.loaded = '1';
   if (!data || data.changes.length===0) { el.innerHTML = '<div class="empty-state"><h3>Nog niet genoeg data</h3><p>Prijsveranderingen worden zichtbaar na meerdere dagen.</p></div>'; return; }
