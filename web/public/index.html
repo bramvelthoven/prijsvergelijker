@@ -43,6 +43,11 @@
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border2); font-size: 13px; }
     th { color: var(--text2); font-weight: 500; background: var(--bg2); position: sticky; top: 0; z-index: 1; }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { color: var(--text); }
+    th.sortable::after { content: ' \2195'; font-size: 11px; opacity: 0.4; }
+    th.sortable.asc::after { content: ' \2191'; opacity: 1; }
+    th.sortable.desc::after { content: ' \2193'; opacity: 1; }
     tr:hover td { background: rgba(22,27,34,0.5); }
     @media (max-width: 640px) { th, td { padding: 8px 6px; font-size: 12px; } }
 
@@ -52,7 +57,7 @@
     .store-dirk { background: #1f3d2a; color: var(--green); }
 
     .price { font-weight: 600; font-variant-numeric: tabular-nums; }
-    .price-sale { color: var(--red); font-size: 11px; font-weight: 600; margin-left: 4px; }
+    .price-sale { color: var(--green); font-size: 11px; font-weight: 600; margin-left: 4px; }
     .cheapest { color: var(--green); font-weight: 600; }
     .expensive { color: var(--red); font-weight: 500; }
     .ppu { color: var(--text2); font-size: 11px; }
@@ -302,11 +307,44 @@ function renderCompare(groups) {
   el.innerHTML = html;
 }
 
+let lastSearchData = [];
+let searchSortCol = null;
+let searchSortDir = 'asc';
+
+function sortSearchBy(col) {
+  if (searchSortCol === col) {
+    searchSortDir = searchSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    searchSortCol = col;
+    searchSortDir = (col === 'price' || col === 'ppu') ? 'asc' : 'asc';
+  }
+  renderSearch(lastSearchData);
+}
+
 function renderSearch(data) {
   const el = document.getElementById('search-results');
   if (!data || data.length === 0) { el.innerHTML = '<div class="empty-state"><h3>Geen resultaten</h3><p>Probeer een andere zoekterm.</p></div>'; return; }
-  let html = `<div class="section-title">${data.length} producten gevonden</div><div class="card"><table><tr><th>Winkel</th><th>Product</th><th>Prijs</th><th>Per eenheid</th></tr>`;
-  for (const p of data) {
+  lastSearchData = data;
+
+  const sorted = [...data];
+  if (searchSortCol) {
+    sorted.sort((a, b) => {
+      let va, vb;
+      switch (searchSortCol) {
+        case 'store': va = (a.supermarket||''); vb = (b.supermarket||''); break;
+        case 'name': va = (a.name||''); vb = (b.name||''); break;
+        case 'price': va = a.price||0; vb = b.price||0; return searchSortDir==='asc' ? va-vb : vb-va;
+        case 'ppu': va = a.price_per_unit||Infinity; vb = b.price_per_unit||Infinity; return searchSortDir==='asc' ? va-vb : vb-va;
+      }
+      const cmp = String(va).localeCompare(String(vb), 'nl');
+      return searchSortDir === 'asc' ? cmp : -cmp;
+    });
+  }
+
+  const sc = searchSortCol, sd = searchSortDir;
+  const thClass = c => `sortable${sc===c?' '+sd:''}`;
+  let html = `<div class="section-title">${data.length} producten gevonden</div><div class="card"><table><tr><th class="${thClass('store')}" onclick="sortSearchBy('store')">Winkel</th><th class="${thClass('name')}" onclick="sortSearchBy('name')">Product</th><th class="${thClass('price')}" onclick="sortSearchBy('price')">Prijs</th><th class="${thClass('ppu')}" onclick="sortSearchBy('ppu')">Per eenheid</th></tr>`;
+  for (const p of sorted) {
     const sale = p.is_sale ? '<span class="price-sale">ACTIE</span>' : '';
     html += `<tr><td>${badge(p.supermarket)}</td><td><span class="link" onclick="showProduct(${p.id})">${esc(p.name)}</span> ${sale}<br><span class="ppu">${esc(p.unit||'')}</span></td><td><span class="price">${fmtP(p.price)}</span></td><td>${fmtPPU(p.price_per_unit,p.unit_type)}</td></tr>`;
   }
@@ -343,7 +381,7 @@ async function showProduct(id) {
   if (history.length > 0) {
     html += '<table><tr><th>Datum</th><th>Prijs</th><th>Was-prijs</th><th>Actie</th></tr>';
     for (const h of [...history].reverse()) {
-      html += `<tr><td>${h.date}</td><td class="price">${fmtP(h.price)}</td><td style="color:var(--text2)">${h.original_price!==h.price?fmtP(h.original_price):''}</td><td>${h.is_sale?'<span class="price-sale">Ja</span>':''}</td></tr>`;
+      html += `<tr><td>${h.date}</td><td class="price">${fmtP(h.price)}</td><td style="color:var(--text2)">${h.original_price!==h.price?fmtP(h.original_price):''}</td><td>${h.is_sale?'<span class="price-sale">Ja</span>':'<span style="color:var(--text3)">Nee</span>'}</td></tr>`;
     }
     html += '</table>';
   }
