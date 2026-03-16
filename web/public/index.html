@@ -33,10 +33,10 @@
 
     /* Header */
     .header { background: var(--bg2); border-bottom: 1px solid var(--border2); padding: 0 24px; height: 56px; display: flex; align-items: center; gap: 16px; }
-    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
-    .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-    .logo-text { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
-    .logo-text span { color: var(--accent); }
+    .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); }
+    .logo-icon { font-size: 22px; line-height: 1; }
+    .logo-text { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-text span { background: linear-gradient(135deg, var(--accent) 0%, #818cf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
     .header-stores { display: flex; gap: 8px; margin-left: 16px; padding-left: 16px; border-left: 1px solid var(--border); }
     .header-store { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
     .header-store-ah { color: var(--ah-text); background: var(--ah-bg); }
@@ -239,7 +239,7 @@
 
 <div class="header">
   <a class="logo" href="/">
-    <div class="logo-icon">🛒</div>
+    <span class="logo-icon">🛒</span>
     <div class="logo-text">Prijs<span>vergelijker</span></div>
   </a>
   <div class="header-stores">
@@ -327,7 +327,7 @@
   <div class="footer-inner">
     <div class="footer-brand">
       <div class="logo">
-        <div class="logo-icon">🛒</div>
+        <span class="logo-icon">🛒</span>
         <div class="logo-text">Prijs<span>vergelijker</span></div>
       </div>
       <p>Dagelijks automatisch prijzen verzamelen van de grootste Nederlandse supermarkten. Onafhankelijk en transparant.</p>
