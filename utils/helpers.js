@@ -37,12 +37,16 @@ async function retry(fn, { maxRetries = 3, label = 'operation' } = {}) {
 
 /**
  * Create a browser + page configured for scraping Dutch supermarkets.
- * All supermarkets block headless browsers, so we use headed mode.
+ * Uses headed mode locally, headless "new" mode in CI (GitHub Actions).
  */
 async function createBrowser() {
+  const isCI = !!process.env.CI;
   const browser = await chromium.launch({
-    headless: false,
-    args: ['--disable-blink-features=AutomationControlled'],
+    headless: isCI ? 'new' : false,
+    args: [
+      '--disable-blink-features=AutomationControlled',
+      ...(isCI ? ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] : []),
+    ],
   });
 
   const context = await browser.newContext({

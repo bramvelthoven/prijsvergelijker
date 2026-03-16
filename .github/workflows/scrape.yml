@@ -1,0 +1,45 @@
+name: Daily Scrape & Deploy
+
+on:
+  schedule:
+    # Run daily at 05:00 UTC (06:00 Amsterdam time in winter, 07:00 in summer)
+    - cron: '0 5 * * *'
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run scraper
+        run: node scrape.js
+        env:
+          CI: true
+
+      - name: Generate static site
+        run: node generate-site.js
+
+      - name: Commit and push data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add web/public/data/
+          git diff --cached --quiet && echo "No data changes" && exit 0
+          git commit -m "data: $(date -u +%Y-%m-%d)"
+          git push
