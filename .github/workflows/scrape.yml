@@ -68,7 +68,7 @@ jobs:
             node -e "
               const db = require('better-sqlite3')('prices.db');
               const products = db.prepare('SELECT COUNT(*) as c FROM products').get().c;
-              const prices = db.prepare('SELECT COUNT(*) as c FROM price_history').get().c;
+              const prices = db.prepare('SELECT COUNT(*) as c FROM prices').get().c;
               console.log('Database: ' + products + ' products, ' + prices + ' price records');
               if (products === 0) {
                 console.log('::error::Database has 0 products — cannot generate site');

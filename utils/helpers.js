@@ -42,7 +42,7 @@ async function retry(fn, { maxRetries = 3, label = 'operation' } = {}) {
 async function createBrowser() {
   const isCI = !!process.env.CI;
   const browser = await chromium.launch({
-    headless: isCI ? 'new' : false,
+    headless: isCI ? true : false,
     args: [
       '--disable-blink-features=AutomationControlled',
       ...(isCI ? ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] : []),
