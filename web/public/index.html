@@ -311,7 +311,8 @@ loadJson('products-ah.json').then(async data => {
   if (shuffled.length === 0) return;
   let html = '<div class="section-title">Aanbiedingen vandaag</div><div class="card-grid">';
   for (const p of shuffled) {
-    html += `<div class="deal-card" onclick="quickSearch('${esc(p.n.replace(/'/g,''))}')"">
+    const safeName = esc(p.n).replace(/"/g, '&quot;');
+    html += `<div class="deal-card" data-q="${safeName}" onclick="quickSearch(this.dataset.q)">
       <div class="deal-name">${esc(p.n)}</div>
       <div class="deal-price">${fmtP(p.p)} <span class="price-sale">ACTIE</span></div>
       <div class="deal-store">${badge(p.s)}</div>
