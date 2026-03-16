@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://prijsvergelijker-seven.vercel.app/sitemap.xml

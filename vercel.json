@@ -3,11 +3,25 @@
   "outputDirectory": "web/public",
   "installCommand": "",
   "framework": null,
+  "cleanUrls": true,
+  "trailingSlash": true,
   "headers": [
     {
       "source": "/data/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=300, s-maxage=300, stale-while-revalidate=60" }
+      ]
+    },
+    {
+      "source": "/product/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=300" }
+      ]
+    },
+    {
+      "source": "/categorie/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=300" }
       ]
     }
   ]

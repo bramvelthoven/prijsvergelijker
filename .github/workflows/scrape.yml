@@ -87,7 +87,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add web/public/data/
+          git add web/public/data/ web/public/vergelijk/ web/public/categorie/ web/public/categorieen/ web/public/over/ web/public/privacy/ web/public/sitemap.xml web/public/robots.txt
           git diff --cached --quiet && echo "No data changes" && exit 0
           git commit -m "data: $(date -u +%Y-%m-%d)"
           git pull --rebase

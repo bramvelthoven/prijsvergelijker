@@ -144,6 +144,11 @@ function generate() {
   });
 
   console.log('\nDone! Static files written to web/public/data/');
+
+  // Generate SEO pages (static HTML, sitemap, robots.txt)
+  console.log('');
+  const { generateSEO } = require('./generate-seo');
+  generateSEO();
 }
 
 try {
