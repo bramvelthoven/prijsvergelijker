@@ -186,6 +186,23 @@ function migrate() {
     console.log(`  Inserted ${mappings.length} category mappings`);
   }
 
+  // --- Clean false sale flags ---
+  // Reset is_sale where original_price equals price (no actual discount)
+  const cleanResult = db
+    .prepare('UPDATE prices SET is_sale = 0 WHERE original_price = price AND is_sale = 1')
+    .run();
+  if (cleanResult.changes > 0) {
+    console.log(`  Cleaned ${cleanResult.changes} false sale flags (original_price = price)`);
+  }
+
+  // Also reset where original_price is null but is_sale was set
+  const cleanResult2 = db
+    .prepare('UPDATE prices SET is_sale = 0 WHERE original_price IS NULL AND is_sale = 1')
+    .run();
+  if (cleanResult2.changes > 0) {
+    console.log(`  Cleaned ${cleanResult2.changes} false sale flags (no original_price)`);
+  }
+
   console.log('Migrations complete.');
 }
 

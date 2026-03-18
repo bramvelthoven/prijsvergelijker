@@ -192,7 +192,7 @@ async function extractProducts(page) {
 
         if (!price || isNaN(price)) return;
 
-        // Check for sale/action
+        // Check for sale/action — only mark as sale when we have a confirmed discount
         let originalPrice = null;
         let isSale = false;
 
@@ -204,25 +204,15 @@ async function extractProducts(page) {
           );
           const oldCents = oldPriceContainer.querySelector('span.price-small');
           if (oldEuros && oldCents) {
-            originalPrice = parseFloat(
+            const parsed = parseFloat(
               `${oldEuros.textContent.trim()}.${oldCents.textContent.trim()}`
             );
-            isSale = true;
+            // Only mark as sale if original price is actually higher
+            if (parsed > price) {
+              originalPrice = parsed;
+              isSale = true;
+            }
           }
-        }
-
-        // Also check for "ACTIE" label or "van X.XX" text
-        const actionEl = card.querySelector(
-          '.action-label, [class*="action"], [class*="promo"]'
-        );
-        if (actionEl) isSale = true;
-
-        // Check for "van X.XX" text in the card
-        const cardText = card.textContent;
-        const vanMatch = cardText.match(/van\s+(\d+)[.,](\d{2})/);
-        if (vanMatch && !originalPrice) {
-          originalPrice = parseFloat(`${vanMatch[1]}.${vanMatch[2]}`);
-          isSale = true;
         }
 
         // Unit

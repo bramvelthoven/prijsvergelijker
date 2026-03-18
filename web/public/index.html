@@ -595,30 +595,36 @@ loadJson('price-index.json').then(data => {
   </div>`;
 
   const ctx = document.getElementById('index-chart').getContext('2d');
-  const mkDataset = (label, data, color) => ({
-    label, data, borderColor: color, backgroundColor: color.replace(')', ',0.06)').replace('rgb', 'rgba'),
-    fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: color, pointBorderWidth: 0, borderWidth: 2,
+  // With sparse data, use grouped bar chart — much cleaner than lines with 2-3 points
+  const labels = data.dates.map(d => { const p = d.split('-'); return p[2] + '-' + p[1]; });
+  const mkBar = (label, rawData, color) => ({
+    label, data: rawData, backgroundColor: color, borderColor: color, borderWidth: 0,
+    borderRadius: 4, maxBarThickness: 32,
   });
   indexChart = new Chart(ctx, {
-    type: 'line',
+    type: 'bar',
     data: {
-      labels: data.dates,
+      labels,
       datasets: [
-        mkDataset('Albert Heijn', data.series.ah, 'rgb(96,169,246)'),
-        mkDataset('Jumbo', data.series.jumbo, 'rgb(240,192,64)'),
-        mkDataset('Dirk', data.series.dirk, 'rgb(74,222,128)'),
+        mkBar('Albert Heijn', data.series.ah, 'rgb(96,169,246)'),
+        mkBar('Jumbo', data.series.jumbo, 'rgb(240,192,64)'),
+        mkBar('Dirk', data.series.dirk, 'rgb(74,222,128)'),
       ],
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       scales: {
-        x: { ticks: { color: '#4f5768', font: { size: 11, family: 'Inter' } }, grid: { color: '#1a1e2a' } },
-        y: { ticks: { color: '#4f5768', callback: v => '\u20AC'+v.toFixed(2), font: { size: 11, family: 'Inter' } }, grid: { color: '#1a1e2a' } },
+        x: { ticks: { color: '#6b7394', font: { size: 11, family: 'Inter' } }, grid: { display: false }, border: { color: 'rgba(255,255,255,0.06)' } },
+        y: { ticks: { color: '#6b7394', callback: v => '\u20AC' + v.toFixed(2), font: { size: 11, family: 'Inter' } }, grid: { color: 'rgba(255,255,255,0.06)' }, border: { display: false }, beginAtZero: true },
       },
       plugins: {
         legend: { display: false },
-        tooltip: { backgroundColor: '#161921', borderColor: '#232836', borderWidth: 1, titleColor: '#8b94a9', bodyColor: '#eaedf4', padding: 12, cornerRadius: 8, titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' }, callbacks: { label: c => c.dataset.label + ': \u20AC' + c.parsed.y.toFixed(2) } },
+        tooltip: {
+          backgroundColor: '#1c2030', borderColor: '#2a3048', borderWidth: 1, titleColor: '#8b94a9', bodyColor: '#eaedf4', padding: 12, cornerRadius: 8, titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' },
+          filter: c => c.parsed.y !== null,
+          callbacks: { label: c => c.parsed.y !== null ? ' ' + c.dataset.label + ': \u20AC' + c.parsed.y.toFixed(2) : null },
+        },
       },
     },
   });
@@ -748,11 +754,25 @@ function renderCompare(groups) {
   for (const group of groups.slice(0, 20)) {
     const sorted = group.items.filter(i => i.price != null).sort((a,b) => a.price - b.price);
     if (sorted.length < 2) continue;
-    const cheapest = sorted[0].price;
+    // Skip groups where most expensive is >2x cheapest (likely different pack sizes / bad match)
+    if (sorted[sorted.length-1].price / sorted[0].price > 2) continue;
+    const cheapest = sorted[0];
     html += `<div class="card compare-group"><h3>${esc(group.name)}</h3><table><tr><th>Winkel</th><th>Prijs</th><th>Per eenheid</th><th></th></tr>`;
     for (let i = 0; i < sorted.length; i++) {
       const p = sorted[i];
-      const diff = i===0 ? '<span class="cheapest">Goedkoopst</span>' : `<span class="expensive">+${Math.round((p.price-cheapest)/cheapest*100)}%</span>`;
+      let diff;
+      if (i === 0) {
+        diff = '<span class="cheapest">Goedkoopst</span>';
+      } else {
+        // Use price-per-unit when both have it and same unit type
+        let pct;
+        if (p.price_per_unit && cheapest.price_per_unit && p.unit_type === cheapest.unit_type) {
+          pct = Math.round((p.price_per_unit - cheapest.price_per_unit) / cheapest.price_per_unit * 100);
+        } else {
+          pct = Math.round((p.price - cheapest.price) / cheapest.price * 100);
+        }
+        diff = `<span class="expensive">+${pct}%</span>`;
+      }
       const sale = p.is_sale ? '<span class="price-sale">ACTIE</span>' : '';
       html += `<tr><td>${badge(p.supermarket)}</td><td><span class="price">${fmtP(p.price)}</span> ${sale}</td><td>${fmtPPU(p.price_per_unit,p.unit_type)}</td><td>${diff}</td></tr>`;
     }

@@ -3,3 +3,4 @@ prices.db
 prices.db-shm
 prices.db-wal
 exports/
+.vercel

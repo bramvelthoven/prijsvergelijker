@@ -132,7 +132,14 @@ function generate() {
   const matchData = matches.map(m => ({
     ...m,
     members: memberStmt.all(m.id),
-  }));
+  })).filter(m => {
+    // Filter out bad matches where price diff >100% (likely different pack sizes)
+    const prices = m.members.filter(p => p.price != null && p.price > 0);
+    if (prices.length < 2) return false;
+    const min = Math.min(...prices.map(p => p.price));
+    const max = Math.max(...prices.map(p => p.price));
+    return max / min <= 2;
+  });
   writeJson('matches.json', matchData);
 
   // 11. Price index — daily average price per supermarket (for homepage chart)

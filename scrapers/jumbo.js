@@ -77,30 +77,47 @@ async function extractProducts(page) {
             originalPrice = parseFloat(
               `${oldWhole.textContent.trim()}.${oldFrac.textContent.trim()}`
             );
-            isSale = true;
-          }
-        }
-
-        // Also check for promotion tags
-        if (!isSale) {
-          const promoTag = card.querySelector(
-            '[class*="promotion"], [class*="sticker"], .jum-tag'
-          );
-          if (promoTag) {
-            const promoText = promoTag.textContent.toLowerCase();
-            if (
-              promoText.includes('korting') ||
-              promoText.includes('voor') ||
-              promoText.includes('actie')
-            ) {
+            // Only mark as sale if original price is actually higher
+            if (originalPrice > price) {
               isSale = true;
+            } else {
+              originalPrice = null;
             }
           }
         }
 
-        // Unit size
-        const subtitleEl = card.querySelector('[data-testid="jum-card-subtitle"]');
-        const unit = subtitleEl?.textContent?.trim() || null;
+        // Unit size: try multiple selectors, then parse from title as fallback
+        let unit = null;
+        const unitSelectors = [
+          '[data-testid="jum-card-subtitle"]',
+          '.jum-card-subtitle',
+          '.subtitle',
+          '[class*="subtitle"]',
+        ];
+        for (const sel of unitSelectors) {
+          const el = card.querySelector(sel);
+          if (el) {
+            const text = el.textContent.trim();
+            if (text) { unit = text; break; }
+          }
+        }
+        // Last resort: parse unit from product title
+        if (!unit && name) {
+          const unitMatch = name.match(
+            /(\d+(?:[.,]\d+)?)\s*(kg|g|gr|ml|cl|l|liter|stuks?|st)\b/i
+          );
+          const multiMatch = name.match(
+            /(\d+)\s*x\s*(\d+(?:[.,]\d+)?)\s*(kg|g|gr|ml|cl|l)\b/i
+          );
+          const perStukMatch = name.match(/\bper\s+stuk\b/i);
+          if (multiMatch) {
+            unit = `${multiMatch[1]} x ${multiMatch[2]} ${multiMatch[3]}`;
+          } else if (unitMatch) {
+            unit = `${unitMatch[1]} ${unitMatch[2]}`;
+          } else if (perStukMatch) {
+            unit = 'per stuk';
+          }
+        }
 
         // Brand: Jumbo-brand products start with "Jumbo "
         let brand = null;

@@ -94,9 +94,32 @@ function upsertProduct({ name, brand, category, unit, supermarket, url }) {
 
 /**
  * Insert a new price record for a product.
+ * Includes basic sanity checks to reject obviously wrong prices.
  */
 function insertPrice({ productId, price, originalPrice, isSale }) {
+  // Reject invalid prices
+  if (price <= 0 || price > 500) {
+    console.warn(`[DB] Rejected price €${price} for product ${productId} (out of range)`);
+    return null;
+  }
+
+  // Warn on large price swings (possible extraction error)
   const db = getDb();
+  const lastPrice = db
+    .prepare(
+      `SELECT price FROM prices WHERE product_id = ? ORDER BY scraped_at DESC LIMIT 1`
+    )
+    .get(productId);
+
+  if (lastPrice && lastPrice.price > 0) {
+    const changeRatio = Math.abs(price - lastPrice.price) / lastPrice.price;
+    if (changeRatio > 0.5) {
+      console.warn(
+        `[DB] Large price change for product ${productId}: €${lastPrice.price} → €${price} (${(changeRatio * 100).toFixed(0)}%)`
+      );
+    }
+  }
+
   const result = db
     .prepare(
       `INSERT INTO prices (product_id, price, original_price, is_sale)

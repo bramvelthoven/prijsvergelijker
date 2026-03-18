@@ -206,12 +206,20 @@ function generateSEO() {
   `);
 
   let compareCount = 0;
+  let skippedBadMatch = 0;
   for (const m of matchGroups) {
-    const members = matchMemberStmt.all(m.id);
+    const members = matchMemberStmt.all(m.id).filter(p => p.price != null && p.price > 0);
     if (members.length < 2) continue;
 
-    const slug = slugify(m.canonical_name);
+    // Skip groups where cheapest vs most expensive differ >100% — likely bad match (different pack sizes)
     const cheapest = members[0];
+    const mostExpensive = members[members.length - 1];
+    if (mostExpensive.price / cheapest.price > 2) {
+      skippedBadMatch++;
+      continue;
+    }
+
+    const slug = slugify(m.canonical_name);
     const cheapestStore = SN[cheapest.supermarket] || cheapest.supermarket;
     const category = members[0].category || '';
 
@@ -225,9 +233,20 @@ function generateSEO() {
       const ppuType = p.unit_type === 'g' ? '/kg' : p.unit_type === 'ml' ? '/l' : '/stuk';
       const ppu = p.price_per_unit ? `${fmtP(p.price_per_unit)}${ppuType}` : '';
       const sale = p.is_sale ? ' <span class="sale">ACTIE</span>' : '';
-      const diff = i === 0 ? '<span style="color:var(--green);font-weight:600">Goedkoopst</span>' :
-        `<span style="color:var(--red)">+${Math.round((p.price - cheapest.price) / cheapest.price * 100)}%</span>`;
-      body += `<tr><td>${badge(p.supermarket)}</td><td>${esc(p.name)}${sale}<br><span style="color:var(--text3);font-size:11px">${esc(p.unit || '')}</span></td><td class="price">${fmtP(p.price)}</td><td style="color:var(--text3);font-size:12px">${ppu}</td><td>${diff}</td></tr>`;
+      // Use price-per-unit for percentage when both have it, otherwise absolute price
+      let diffHtml;
+      if (i === 0) {
+        diffHtml = '<span style="color:var(--green);font-weight:600">Goedkoopst</span>';
+      } else {
+        let pct;
+        if (p.price_per_unit && cheapest.price_per_unit && p.unit_type === cheapest.unit_type) {
+          pct = Math.round((p.price_per_unit - cheapest.price_per_unit) / cheapest.price_per_unit * 100);
+        } else {
+          pct = Math.round((p.price - cheapest.price) / cheapest.price * 100);
+        }
+        diffHtml = `<span style="color:var(--red)">+${pct}%</span>`;
+      }
+      body += `<tr><td>${badge(p.supermarket)}</td><td>${esc(p.name)}${sale}<br><span style="color:var(--text3);font-size:11px">${esc(p.unit || '')}</span></td><td class="price">${fmtP(p.price)}</td><td style="color:var(--text3);font-size:12px">${ppu}</td><td>${diffHtml}</td></tr>`;
     }
     body += '</table></div>';
 
@@ -256,7 +275,7 @@ function generateSEO() {
     }));
     compareCount++;
   }
-  console.log(`  ${compareCount} comparison pages generated`);
+  console.log(`  ${compareCount} comparison pages generated${skippedBadMatch > 0 ? ` (${skippedBadMatch} skipped — suspicious price diff >100%)` : ''}`);
 
   // === 4. Content pages ===
 

@@ -87,9 +87,35 @@ async function scrapePage(page, categoryPath, pageNum) {
         }
         if (!price || isNaN(price)) return;
 
-        const isHighlight = priceContainer.className.includes('highlight');
+        // Sale detection: only mark as sale if there's an explicit bonus label
+        // with sale-related text, not just any shield/highlight badge
+        let isSale = false;
+        let originalPrice = null;
         const shieldEl = card.querySelector('[data-testid="product-shield"]');
-        const isSale = isHighlight || !!shieldEl;
+        if (shieldEl) {
+          const shieldText = shieldEl.textContent.toLowerCase();
+          if (
+            shieldText.includes('bonus') ||
+            shieldText.includes('korting') ||
+            shieldText.includes('actie') ||
+            shieldText.includes('% lager') ||
+            shieldText.includes('2e halve prijs') ||
+            shieldText.includes('1+1')
+          ) {
+            isSale = true;
+          }
+        }
+
+        // Check for strikethrough / original price
+        const oldPriceEl = card.querySelector('[data-testid="price-was"]');
+        if (oldPriceEl) {
+          const oldText = oldPriceEl.textContent.replace(/[^\d.,]/g, '').replace(',', '.');
+          const parsed = parseFloat(oldText);
+          if (parsed && parsed > price) {
+            originalPrice = parsed;
+            isSale = true;
+          }
+        }
 
         const unitEl = card.querySelector('[data-testid="product-unit-size"]');
         const unit = unitEl?.textContent?.trim() || null;
@@ -97,7 +123,7 @@ async function scrapePage(page, categoryPath, pageNum) {
         let brand = null;
         if (name.startsWith('AH ')) brand = 'AH';
 
-        items.push({ name, brand, price, originalPrice: null, isSale, unit, url });
+        items.push({ name, brand, price, originalPrice, isSale, unit, url });
       } catch {
         // skip
       }
